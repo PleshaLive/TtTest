@@ -5,10 +5,6 @@ const fs = require("fs");
 
 const app = express();
 const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`Сервер запущен на http://localhost:${port}`);
-});
-
 
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
@@ -23,7 +19,7 @@ app.use(session({
   cookie: { secure: false } // для HTTPS установите true
 }));
 
-// Страница логина (убедитесь, что файлы login.html и login.css находятся в папке public)
+// Страница логина (файлы login.html и login.css должны быть в папке public)
 app.get("/login", (req, res) => {
   if (req.session.authenticated) return res.redirect("/");
   res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -38,7 +34,7 @@ app.post("/login", (req, res) => {
   res.redirect("/login?error=1");
 });
 
-// Мидлвара для проверки аутентификации: если не залогинен, редирект на /login
+// Middleware для проверки авторизации (редирект не залогиненных на /login)
 app.use((req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
@@ -54,13 +50,13 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Дефолтные пути для логотипов (если для команды не указан или содержит "none.png")
+// Дефолтные пути для логотипов
 const defaultTeam1Logo = "C:\\projects\\vMix_score\\public\\logos\\default1.png";
 const defaultTeam2Logo = "C:\\projects\\vMix_score\\public\\logos\\default2.png";
 
 // Хранение данных в памяти
-let savedMatches = [];    // данные матчей
-let savedMapVeto = {};    // данные Map Veto
+let savedMatches = [];
+let savedMapVeto = {};
 let savedVRS = {
   1: {
     TEAM1: { winPoints: 35, losePoints: -35, rank: 4, currentPoints: 84 },
@@ -83,7 +79,7 @@ let savedVRS = {
 // Путь к файлу базы данных
 const dbFilePath = path.join(__dirname, "db.json");
 
-// Функция загрузки данных из db.json (если файла нет — создается пустой)
+// Функция загрузки данных из db.json
 function loadDataFromFile() {
   if (!fs.existsSync(dbFilePath)) {
     fs.writeFileSync(dbFilePath, JSON.stringify({
@@ -110,7 +106,7 @@ function saveDataToFile() {
   fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
 }
 
-// Функция для форматирования winPoints
+// Функция форматирования winPoints
 function formatWinPoints(value) {
   if (value === "" || value === null || value === undefined) return "";
   const num = Number(value);
@@ -119,7 +115,7 @@ function formatWinPoints(value) {
 }
 
 /**
- * Функция выбора логотипа для команды.
+ * Выбираем логотип для команды.
  */
 function getLogo(match, team) {
   let rawLogo;
@@ -177,7 +173,6 @@ app.post("/api/matchdata", (req, res) => {
   
   saveDataToFile();
   setTimeout(() => io.emit("reload"), 500);
-  
   res.json(savedMatches);
 });
 
@@ -192,7 +187,6 @@ app.post("/api/mapveto", (req, res) => {
   
   saveDataToFile();
   setTimeout(() => io.emit("reload"), 500);
-  
   res.json(savedMapVeto);
 });
 
