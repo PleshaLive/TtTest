@@ -4,7 +4,11 @@ const path = require("path");
 const fs   = require("fs");
 
 const app = express();
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Сервер запущен на http://0.0.0.0:${port}`);
+});
+
 
 const cookieParser = require("cookie-parser");
 const session      = require("express-session");
