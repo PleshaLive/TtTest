@@ -364,6 +364,8 @@ app.get("/api/teams", (req, res) => {
   });
 });
 
-app.listen(port, () => {
+const http = require("http");
+const server = http.createServer(app);
+server.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });

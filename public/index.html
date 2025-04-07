@@ -8,6 +8,15 @@
 <body>
   <div class="container">
     <h1>Интерфейс матчей</h1>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      const socket = io();
+      socket.on("reload", () => {
+        console.log("Получено сообщение о перезагрузке, обновляю страницу...");
+        window.location.reload();
+      });
+    </script>
 
     <div class="dashboard">
       <!-- 1) Первая строка: 4 матча -->
