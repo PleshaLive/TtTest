@@ -1,0 +1,246 @@
+/* ========== Общие ========== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: #222;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+.container {
+  max-width: 1600px;
+  margin: auto;
+  padding: 20px;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ========== GRID-РАСКЛАДКА ========== */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 12px;
+}
+.matches {
+  grid-column: 1 / 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.next-row {
+  grid-column: 1 / 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.map-veto-block {
+  grid-column: 1 / 5;
+  background: #333;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.map-veto-block h1 {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+/* ========== СТИЛИ МАТЧЕЙ ========== */
+.match-column {
+  background: #333;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+}
+.match-column h2 {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.winner-buttons {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.winner-buttons button {
+  font-size: 12px;
+  padding: 4px 8px;
+  margin: 0 4px;
+  background: #555;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+.winner-buttons button:hover {
+  background: #777;
+}
+.status-select,
+.time-input {
+  width: 100%;
+  font-size: 14px;
+  padding: 4px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+}
+.time-input {
+  margin-bottom: 12px;
+}
+.team-select {
+  width: 100%;
+  font-size: 14px;
+  padding: 4px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border: 1px solid #444;
+}
+.maps {
+  margin-bottom: 12px;
+}
+.map-row {
+  display: flex;
+  margin-bottom: 6px;
+}
+.map-name-select,
+.map-score-input {
+  font-size: 12px;
+  padding: 4px;
+  border: 1px solid #444;
+  background: #444;
+  color: #fff;
+}
+.map-name-select {
+  flex: 1;
+  border-radius: 4px 0 0 4px;
+}
+.map-score-input {
+  width: 60px;
+  text-align: center;
+  border-radius: 0 4px 4px 0;
+  margin-left: -1px;
+}
+
+/* ========== VRS ========== */
+.vrs-block {
+  background: #444;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: auto;
+}
+.vrs-block h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  text-align: center;
+}
+.vrs-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.vrs-table th,
+.vrs-table td {
+  border: 1px solid #555;
+  padding: 4px 6px;
+  font-size: 12px;
+  text-align: center;
+  color: #fff;
+  background: #555;
+}
+.vrs-table tbody tr:nth-child(even) td {
+  background: #3f3f3f;
+}
+.vrs-table input {
+  width: 100%;
+  padding: 2px;
+  font-size: 12px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  text-align: center;
+  background: #666;
+  color: #fff;
+}
+
+/* ========== VS / NEXT ROW ========== */
+.next-column {
+  background: #333;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.next-column .vs,
+.next-column .next {
+  background: #444;
+  padding: 8px 0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.next-column .next {
+  margin-bottom: 0;
+}
+
+/* ========== MAP VETO ========== */
+#vetoTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+#vetoTable th,
+#vetoTable td {
+  padding: 8px;
+  border: 1px solid #444;
+  text-align: center;
+}
+#vetoTable th {
+  background: #555;
+  color: #fff;
+}
+.veto-action,
+.veto-map,
+.veto-team,
+.veto-side {
+  width: 100%;
+  font-size: 12px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #444;
+  color: #fff;
+}
+
+/* ========== JSON OUTPUT ========== */
+.json-output {
+  margin-top: 20px;
+  background: #fff;
+  color: #000;
+  padding: 10px;
+  border-radius: 5px;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+.next-row {
+  display: none;
+}
+/* Подсветка выбранного победителя */
+.winner-btn.winner-selected {
+  background-color: #28a745; /* зелёный */
+  color: #fff;
+}
+
+.status-select {
+  transition: background-color 0.3s;
+}
+
+.winner-btn.winner-selected {
+  background-color: #28a745;
+  color: #fff;
+}
