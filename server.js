@@ -1,28 +1,31 @@
 const express = require("express");
-const basicAuth = require("express-basic-auth"); // если нужно
+const basicAuth = require("express-basic-auth");   // <- вот это
 const path = require("path");
-const fs = require("fs");
+const fs   = require("fs");
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 const cookieParser = require("cookie-parser");
-const session = require("express-session");
+const session      = require("express-session");
 
-// Парсеры и сессии
+// парсеры
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// сессии
 app.use(session({
   secret: "322223",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // для HTTPS установите true
+  cookie: { secure: false } // при HTTPS — true
 }));
 
-// Страница логина (убедитесь, что файлы login.html и login.css находятся в папке public)
+
+// страница логина (создайте public/login.html + public/login.css)
 app.get("/login", (req, res) => {
   if (req.session.authenticated) return res.redirect("/");
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  res.sendFile(path.join(__dirname, "public/login.html"));
 });
 
 app.post("/login", (req, res) => {
@@ -31,13 +34,14 @@ app.post("/login", (req, res) => {
     req.session.authenticated = true;
     return res.redirect("/");
   }
+  // на ошибку — обратно на логин с параметром
   res.redirect("/login?error=1");
 });
 
-// Middleware: если не залогинен, перенаправляем на /login (исключая /api и файлы логина)
+// если не залогинен — редирект на /login
 app.use((req, res, next) => {
   if (
-    req.path.startsWith("/api/") ||
+    req.path.startsWith("/api/") ||     // <-- вот это
     req.session.authenticated ||
     req.path === "/login" ||
     req.path === "/login.css"
@@ -47,16 +51,18 @@ app.use((req, res, next) => {
   res.redirect("/login");
 });
 
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Дефолтные пути для логотипов (если не указан или содержит "none.png")
+// Дефолтные пути для логотипов (если для команды не указан или содержит "none.png")
 const defaultTeam1Logo = "C:\\projects\\vMix_score\\public\\logos\\default1.png";
 const defaultTeam2Logo = "C:\\projects\\vMix_score\\public\\logos\\default2.png";
 
 // Хранение данных в памяти
 let savedMatches = [];    // данные матчей
 let savedMapVeto = {};    // данные Map Veto
+// Данные VRS для матчей (индекс 1..4)
 let savedVRS = {
   1: {
     TEAM1: { winPoints: 35, losePoints: -35, rank: 4, currentPoints: 84 },
@@ -79,9 +85,10 @@ let savedVRS = {
 // Путь к файлу базы данных
 const dbFilePath = path.join(__dirname, "db.json");
 
-// Функция загрузки данных из файла db.json
+// Функция для загрузки данных из файла db.json
 function loadDataFromFile() {
   if (!fs.existsSync(dbFilePath)) {
+    // Если файла нет, создаём его с пустой структурой
     fs.writeFileSync(dbFilePath, JSON.stringify({
       matches: [],
       mapVeto: {},
@@ -90,13 +97,13 @@ function loadDataFromFile() {
   }
   const rawData = fs.readFileSync(dbFilePath, "utf8");
   const jsonData = JSON.parse(rawData);
+  
   savedMatches = jsonData.matches || [];
   savedMapVeto = jsonData.mapVeto || {};
-  savedVRS = jsonData.vrs || {};
+  savedVRS     = jsonData.vrs || {};
 }
-loadDataFromFile();
 
-// Функция сохранения данных в файл db.json
+// Функция для сохранения данных в файл db.json
 function saveDataToFile() {
   const jsonData = {
     matches: savedMatches,
@@ -106,7 +113,10 @@ function saveDataToFile() {
   fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
 }
 
-// Функция форматирования winPoints
+// Загрузка данных из файла при старте сервера
+loadDataFromFile();
+
+// Функция для форматирования winPoints – если число положительное, добавляется знак "+"
 function formatWinPoints(value) {
   if (value === "" || value === null || value === undefined) return "";
   const num = Number(value);
@@ -115,18 +125,24 @@ function formatWinPoints(value) {
 }
 
 /**
- * Функция выбора логотипа для команды.
+ * Выбираем логотип для команды:
+ * 1) Если матч FINISHED, берём FINISHED_TEAM*_LOGO
+ * 2) Иначе (LIVE или UPCOM) – берём UPCOM_TEAM*_LOGO
+ * 3) Если строка пустая или оканчивается на "none.png" (с учётом обратных слешей), подставляем дефолт
  */
 function getLogo(match, team) {
   let rawLogo;
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
     rawLogo = (team === "TEAM1") ? match.FINISHED_TEAM1_LOGO : match.FINISHED_TEAM2_LOGO;
   } else {
+    // Для LIVE ведём себя так же, как для UPCOM
     rawLogo = (team === "TEAM1") ? match.UPCOM_TEAM1_LOGO : match.UPCOM_TEAM2_LOGO;
   }
+  // Если ничего нет, ставим дефолт
   if (!rawLogo) {
     return (team === "TEAM1") ? defaultTeam1Logo : defaultTeam2Logo;
   }
+  // Приведём слеши к единому формату и проверим, оканчивается ли на "none.png"
   const normalized = rawLogo.replace(/\\/g, "/").toLowerCase();
   if (normalized.endsWith("none.png")) {
     return (team === "TEAM1") ? defaultTeam1Logo : defaultTeam2Logo;
@@ -137,6 +153,7 @@ function getLogo(match, team) {
 // ---------------------
 // Эндпоинты для матчей
 // ---------------------
+
 app.get("/api/matchdata", (req, res) => {
   res.json(savedMatches);
 });
@@ -157,7 +174,7 @@ app.post("/api/matchdata", (req, res) => {
   savedMatches.forEach((match, idx) => {
     const matchId = idx + 1;
     if (match.FINISHED_MATCH_STATUS === "FINISHED") {
-      const winner = match.TEAMWINNER;
+      const winner = match.TEAMWINNER; 
       const vrsData = savedVRS[matchId];
       if (!vrsData) return;
       if (winner === match.FINISHED_TEAM1) {
@@ -171,31 +188,36 @@ app.post("/api/matchdata", (req, res) => {
     }
   });
   
-  // Сохраняем данные и уведомляем клиентов с задержкой
+  // Вставляем вызов сохранения данных в файл:
   saveDataToFile();
-  setTimeout(() => io.emit("reload"), 500);
   
+  setTimeout(() => io.emit("reload"), 500);
+
   res.json(savedMatches);
 });
+
 
 // -----------------------
 // Эндпоинты для Map Veto
 // -----------------------
-app.get("/api/mapveto", (req, res) => res.json(savedMapVeto));
 
+app.get("/api/mapveto", (req, res) => res.json(savedMapVeto));
 app.post("/api/mapveto", (req, res) => {
   savedMapVeto = req.body;
   console.log("Получены данные mapveto:", savedMapVeto);
   
+  // Сохраняем данные
   saveDataToFile();
-  setTimeout(() => io.emit("reload"), 500);
   
+  setTimeout(() => io.emit("reload"), 500);
+
   res.json(savedMapVeto);
 });
 
 // ------------------------
 // Эндпоинты для VRS для каждого матча
 // ------------------------
+
 function getVRSResponse(matchId) {
   const vrsData = savedVRS[matchId] || {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints: "" },
@@ -204,7 +226,7 @@ function getVRSResponse(matchId) {
   const match = savedMatches[matchId - 1] || {};
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
-  
+  // Пустой шаблон для FINISHED, с логотипами
   const emptyFin = {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team1Logo },
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
@@ -276,6 +298,7 @@ function getVRSResponse(matchId) {
     }
   }
   
+  // Иначе (LIVE или UPCOM)
   return {
     UPCOM: {
       TEAM1: {
@@ -299,6 +322,7 @@ function getVRSResponse(matchId) {
   };
 }
 
+// Эндпоинты VRS
 app.get("/api/vrs1", (req, res) => {
   res.json([getVRSResponse(1)]);
 });
@@ -315,14 +339,20 @@ app.get("/api/vrs4", (req, res) => {
 app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
   console.log("Получены данные VRS:", savedVRS);
+  
+  // Добавляем сохранение данных в файл:
   saveDataToFile();
+  
   setTimeout(() => io.emit("reload"), 500);
+
   res.json(savedVRS);
 });
 
 // ---------------------------
 // Эндпоинт для списка команд (из файла data.json)
 // ---------------------------
+
+// …
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
   fs.readFile(teamsDataFile, "utf8", (err, data) => {
@@ -340,21 +370,17 @@ app.get("/api/teams", (req, res) => {
   });
 });
 
-// Создаем HTTP-сервер и подключаем socket.io
 const http = require("http");
 const server = http.createServer(app);
+
+// Подключаем socket.io
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// Если требуется, можно добавить наблюдение за index.html (для live reload в разработке)
-// const indexPath = path.join(__dirname, "public", "index.html");
-// fs.watch(indexPath, (eventType, filename) => {
-//   if (filename) {
-//     console.log(`index.html изменён (${eventType}). Отправляю сообщение обновления.`);
-//     io.emit("reload");
-//   }
-// });
+// 2) Наблюдаем за index.html
 
+
+// И наконец запускаем сервер
 server.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
