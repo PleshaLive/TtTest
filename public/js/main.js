@@ -9,6 +9,57 @@ initMatches();
 initMapVeto();
 initVRS();
 
+// Функция для загрузки сохранённых данных с сервера и обновления UI
+async function loadMatchesFromServer() {
+  try {
+    const response = await fetch("/api/matchdata");
+    const matches = await response.json();
+    
+    // Обновляем поля для каждого матча (предполагается, что у вас matchdata — массив объектов)
+    matches.forEach((match, index) => {
+      const matchIndex = index + 1;
+      
+      // Обновляем поле времени
+      const timeInput = document.getElementById(`timeInput${matchIndex}`);
+      if (timeInput) {
+        timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
+      }
+      
+      // Обновляем статус матча
+      const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
+      if (statusSelect) {
+        if (match.FINISHED_MATCH_STATUS === "FINISHED") {
+          statusSelect.value = "FINISHED";
+        } else if (match.LIVE_MATCH_STATUS === "LIVE") {
+          statusSelect.value = "LIVE";
+        } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
+          statusSelect.value = "UPCOM";
+        }
+      }
+      
+      // Обновляем селекты команд
+      const team1Select = document.getElementById(`team1Select${matchIndex}`);
+      if (team1Select) {
+        team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
+      }
+      const team2Select = document.getElementById(`team2Select${matchIndex}`);
+      if (team2Select) {
+        team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
+      }
+      
+      // Если у вас есть поля для карт, их тоже можно обновлять аналогичным образом
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки matchdata:", error);
+  }
+}
+
+// Вызываем загрузку данных при загрузке страницы
+window.addEventListener("DOMContentLoaded", () => {
+  loadMatchesFromServer();
+  loadAllVRS(); // Обновление VRS, если нужно
+});
+
 // Функция автосохранения с использованием дебаунсинга (задержка 500 мс)
 let autoSaveTimeout;
 function autoSave() {
@@ -35,7 +86,7 @@ function autoSave() {
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
-  }, 500); // задержка 500 мс
+  }, 500);
 }
 
 // Привязываем автосохранение ко всем input и select элементам
