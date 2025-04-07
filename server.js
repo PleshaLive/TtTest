@@ -366,6 +366,15 @@ app.get("/api/teams", (req, res) => {
 
 const http = require("http");
 const server = http.createServer(app);
+
+// Подключаем socket.io
+const { Server } = require("socket.io");
+const io = new Server(server);
+
+// 2) Наблюдаем за index.html
+
+
+// И наконец запускаем сервер
 server.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
