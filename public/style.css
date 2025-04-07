@@ -4,123 +4,191 @@
   margin: 0;
   padding: 0;
 }
+
 body {
-  background: #222;
+  /* Анимированный градиентный фон с сохранением основной цветовой гаммы */
+  background: linear-gradient(-45deg, #222, #2C243B, #222, #2C243B);
+  background-size: 400% 400%;
+  animation: bgAnimation 20s ease infinite;
   color: #fff;
   font-family: Arial, sans-serif;
+  min-height: 100vh;
+  line-height: 1.5;
 }
+
+@keyframes bgAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .container {
   max-width: 1600px;
   margin: auto;
   padding: 20px;
 }
+
 h1 {
   text-align: center;
   margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ========== GRID-РАСКЛАДКА ========== */
 .dashboard {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: auto auto auto;
-  gap: 12px;
+  grid-auto-rows: auto;
+  gap: 16px;
 }
-.matches {
-  grid-column: 1 / 5;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
+
+.matches,
 .next-row {
-  grid-column: 1 / 5;
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
+
+/* ========== MAP VETO ========== */
 .map-veto-block {
-  grid-column: 1 / 5;
+  grid-column: 1 / -1;
   background: #333;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
 }
+
 .map-veto-block h1 {
   text-align: center;
   margin-bottom: 12px;
   font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Добавим лёгкий градиент и анимацию для декоративного эффекта */
+.map-veto-block::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(80,59,169,0.15), transparent 60%);
+  animation: rotate 10s linear infinite;
+}
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ========== СТИЛИ МАТЧЕЙ ========== */
 .match-column {
   background: #333;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.match-column:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.7);
+}
+
 .match-column h2 {
   font-size: 16px;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+
+/* ========== КНОПКИ ПОБЕДИТЕЛЯ ========== */
 .winner-buttons {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
+
 .winner-buttons button {
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   margin: 0 4px;
   background: #555;
   border: none;
   border-radius: 4px;
   color: #fff;
   cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
+
 .winner-buttons button:hover {
   background: #777;
+  transform: scale(1.05);
 }
+
+/* Подсветка выбранного победителя */
+.winner-btn.winner-selected {
+  background-color: #28a745;
+  color: #fff;
+}
+
+/* ========== ЭЛЕМЕНТЫ ФОРМ ========== */
 .status-select,
-.time-input {
+.time-input,
+.team-select,
+.map-name-select,
+.map-score-input,
+.veto-action,
+.veto-map,
+.veto-team,
+.veto-side {
   width: 100%;
   font-size: 14px;
-  padding: 4px;
+  padding: 6px;
   margin-bottom: 8px;
   border-radius: 4px;
   border: 1px solid #444;
+  background: #444;
+  color: #fff;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
-.time-input {
-  margin-bottom: 12px;
+
+.status-select:focus,
+.time-input:focus,
+.team-select:focus,
+.map-name-select:focus,
+.map-score-input:focus,
+.veto-action:focus,
+.veto-map:focus,
+.veto-team:focus,
+.veto-side:focus {
+  outline: none;
+  border-color: #503BA9;
+  box-shadow: 0 0 8px rgba(80,59,169,0.6);
 }
-.team-select {
-  width: 100%;
-  font-size: 14px;
-  padding: 4px;
-  margin-bottom: 6px;
-  border-radius: 4px;
-  border: 1px solid #444;
-}
+
+/* ========== MAPS ========== */
 .maps {
   margin-bottom: 12px;
 }
+
 .map-row {
   display: flex;
   margin-bottom: 6px;
 }
-.map-name-select,
-.map-score-input {
-  font-size: 12px;
-  padding: 4px;
-  border: 1px solid #444;
-  background: #444;
-  color: #fff;
-}
+
 .map-name-select {
   flex: 1;
   border-radius: 4px 0 0 4px;
 }
+
 .map-score-input {
   width: 60px;
   text-align: center;
@@ -131,35 +199,44 @@ h1 {
 /* ========== VRS ========== */
 .vrs-block {
   background: #444;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 8px;
   margin-top: auto;
+  transition: transform 0.3s ease;
 }
+
+.vrs-block:hover {
+  transform: translateY(-2px);
+}
+
 .vrs-block h3 {
-  margin: 0 0 8px;
+  margin-bottom: 8px;
   font-size: 14px;
   text-align: center;
 }
+
 .vrs-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  font-size: 12px;
 }
+
 .vrs-table th,
 .vrs-table td {
   border: 1px solid #555;
-  padding: 4px 6px;
-  font-size: 12px;
+  padding: 6px 8px;
   text-align: center;
-  color: #fff;
   background: #555;
 }
+
 .vrs-table tbody tr:nth-child(even) td {
   background: #3f3f3f;
 }
+
 .vrs-table input {
   width: 100%;
-  padding: 2px;
+  padding: 4px;
   font-size: 12px;
   border: 1px solid #666;
   border-radius: 4px;
@@ -171,50 +248,56 @@ h1 {
 /* ========== VS / NEXT ROW ========== */
 .next-column {
   background: #333;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.next-column:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.7);
+}
+
 .next-column .vs,
 .next-column .next {
   background: #444;
-  padding: 8px 0;
+  padding: 10px 0;
   border-radius: 4px;
   margin-bottom: 8px;
   font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+
 .next-column .next {
   margin-bottom: 0;
 }
 
-/* ========== MAP VETO ========== */
+/* ========== MAP VETO TABLE ========== */
 #vetoTable {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
 }
+
 #vetoTable th,
 #vetoTable td {
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #444;
   text-align: center;
 }
+
 #vetoTable th {
   background: #555;
-  color: #fff;
 }
+
 .veto-action,
 .veto-map,
 .veto-team,
 .veto-side {
-  width: 100%;
-  font-size: 12px;
-  padding: 4px;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background: #444;
-  color: #fff;
+  transition: background-color 0.3s ease;
 }
 
 /* ========== JSON OUTPUT ========== */
@@ -227,20 +310,27 @@ h1 {
   white-space: pre-wrap;
   font-family: monospace;
 }
+
+/* ========== Скрытие NEXT ROW ========== */
 .next-row {
   display: none;
 }
-/* Подсветка выбранного победителя */
-.winner-btn.winner-selected {
-  background-color: #28a745; /* зелёный */
-  color: #fff;
+.map-row {
+  display: flex;
+  /* Раньше у вас было margin-bottom: 6px; можно оставить */
+  margin-bottom: 6px;
+  
+  /* Добавляем зазор между дочерними элементами */
+  gap: 16px;
 }
-
-.status-select {
-  transition: background-color 0.3s;
-}
-
-.winner-btn.winner-selected {
-  background-color: #28a745;
-  color: #fff;
+.map-veto-block::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(80,59,169,0.15), transparent 60%);
+  animation: rotate 10s linear infinite;
+  pointer-events: none; /* <--- вот это главное */
 }
