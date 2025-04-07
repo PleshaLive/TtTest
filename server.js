@@ -372,14 +372,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 // 2) Наблюдаем за index.html
-const indexPath = path.join(__dirname, "public", "index.html");
-fs.watch(indexPath, (eventType, filename) => {
-  if (filename) {
-    console.log(`index.html был изменён (${eventType}). Отправляю сообщение обновления.`);
-    // 3) Отправляем событие "reload" всем подключённым клиентам
-    io.emit("reload");
-  }
-});
+
 
 // И наконец запускаем сервер
 server.listen(port, () => {
