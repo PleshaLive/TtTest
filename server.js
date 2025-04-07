@@ -82,6 +82,40 @@ let savedVRS = {
   }
 };
 
+// Путь к файлу базы данных
+const dbFilePath = path.join(__dirname, "db.json");
+
+// Функция для загрузки данных из файла db.json
+function loadDataFromFile() {
+  if (!fs.existsSync(dbFilePath)) {
+    // Если файла нет, создаём его с пустой структурой
+    fs.writeFileSync(dbFilePath, JSON.stringify({
+      matches: [],
+      mapVeto: {},
+      vrs: {}
+    }, null, 2));
+  }
+  const rawData = fs.readFileSync(dbFilePath, "utf8");
+  const jsonData = JSON.parse(rawData);
+  
+  savedMatches = jsonData.matches || [];
+  savedMapVeto = jsonData.mapVeto || {};
+  savedVRS     = jsonData.vrs || {};
+}
+
+// Функция для сохранения данных в файл db.json
+function saveDataToFile() {
+  const jsonData = {
+    matches: savedMatches,
+    mapVeto: savedMapVeto,
+    vrs: savedVRS
+  };
+  fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
+}
+
+// Загрузка данных из файла при старте сервера
+loadDataFromFile();
+
 // Функция для форматирования winPoints – если число положительное, добавляется знак "+"
 function formatWinPoints(value) {
   if (value === "" || value === null || value === undefined) return "";
@@ -154,8 +188,12 @@ app.post("/api/matchdata", (req, res) => {
     }
   });
   
+  // Вставляем вызов сохранения данных в файл:
+  saveDataToFile();
+  
   res.json(savedMatches);
 });
+
 
 // -----------------------
 // Эндпоинты для Map Veto
@@ -165,6 +203,10 @@ app.get("/api/mapveto", (req, res) => res.json(savedMapVeto));
 app.post("/api/mapveto", (req, res) => {
   savedMapVeto = req.body;
   console.log("Получены данные mapveto:", savedMapVeto);
+  
+  // Сохраняем данные
+  saveDataToFile();
+  
   res.json(savedMapVeto);
 });
 
@@ -293,6 +335,10 @@ app.get("/api/vrs4", (req, res) => {
 app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
   console.log("Получены данные VRS:", savedVRS);
+  
+  // Добавляем сохранение данных в файл:
+  saveDataToFile();
+  
   res.json(savedVRS);
 });
 
