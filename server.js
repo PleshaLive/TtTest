@@ -191,6 +191,8 @@ app.post("/api/matchdata", (req, res) => {
   // Вставляем вызов сохранения данных в файл:
   saveDataToFile();
   
+  io.emit("reload");
+
   res.json(savedMatches);
 });
 
@@ -207,6 +209,8 @@ app.post("/api/mapveto", (req, res) => {
   // Сохраняем данные
   saveDataToFile();
   
+  io.emit("reload");
+
   res.json(savedMapVeto);
 });
 
@@ -339,6 +343,8 @@ app.post("/api/vrs", (req, res) => {
   // Добавляем сохранение данных в файл:
   saveDataToFile();
   
+  io.emit("reload");
+
   res.json(savedVRS);
 });
 
