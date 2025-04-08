@@ -50,15 +50,20 @@ export function initVRS() {
     try {
       const res = await fetch(`/api/vrs/${matchId}`);
       if (!res.ok) return;
-      const data = await res.json();
-      console.log("Загружены данные VRS для матча", matchId, data);
+      const dataArray = await res.json();
+      if (!Array.isArray(dataArray) || dataArray.length === 0) {
+        console.error("Нет данных для матча", matchId);
+        return;
+      }
+      const data = dataArray[0]; // Берем первый элемент массива
   
-      // Обращаемся к данным из блока UPCOM
+      console.log("Загружены данные VRS для матча", matchId, data);
+      // Если данные лежат во вложенности UPCOM:
       document.getElementById(`team1WinPoints${matchId}`).value = data.UPCOM.TEAM1.winPoints;
       document.getElementById(`team1LosePoints${matchId}`).value = data.UPCOM.TEAM1.losePoints;
       document.getElementById(`team1Rank${matchId}`).value = data.UPCOM.TEAM1.rank;
       document.getElementById(`team1CurrentPoints${matchId}`).value = data.UPCOM.TEAM1.currentPoints;
-  
+    
       document.getElementById(`team2WinPoints${matchId}`).value = data.UPCOM.TEAM2.winPoints;
       document.getElementById(`team2LosePoints${matchId}`).value = data.UPCOM.TEAM2.losePoints;
       document.getElementById(`team2Rank${matchId}`).value = data.UPCOM.TEAM2.rank;
