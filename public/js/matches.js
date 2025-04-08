@@ -45,14 +45,13 @@ export function populateTeamSelects(teamsList) {
       const opt1 = document.createElement("option");
       opt1.value = team.name;
       opt1.textContent = team.name;
-      // Предполагается, что логотипы лежат в папке public/logos/
-      opt1.dataset.logo = `/logos/${team.logo}`;
+      opt1.dataset.logo = "C:\\projects\\vMix_score\\public" + team.logo;
       sel1.appendChild(opt1);
 
       const opt2 = document.createElement("option");
       opt2.value = team.name;
       opt2.textContent = team.name;
-      opt2.dataset.logo = `/logos/${team.logo}`;
+      opt2.dataset.logo = "C:\\projects\\vMix_score\\public" + team.logo;
       sel2.appendChild(opt2);
     });
   }
@@ -162,7 +161,7 @@ function updateStatusColor(sel) {
 // Сбор данных матчей
 // ----------------------
 export function gatherMatchesData() {
-  const defaultLogo = "/logos/none.png";
+  const defaultLogo = "C:\\projects\\vMix_score\\public\\logos\\none.png";
   const matches = [];
   // Регекс для проверки формата "число:число"
   const SCORE_REGEX = /^\d+:\d+$/;
