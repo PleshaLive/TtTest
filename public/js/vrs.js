@@ -55,23 +55,31 @@ export function initVRS() {
         console.error("Нет данных для матча", matchId);
         return;
       }
-      const data = dataArray[0]; // Берем первый элемент массива
+      const data = dataArray[0]; // сервер возвращает массив с одним элементом
   
-      console.log("Загружены данные VRS для матча", matchId, data);
-      // Если данные лежат во вложенности UPCOM:
-      document.getElementById(`team1WinPoints${matchId}`).value = data.UPCOM.TEAM1.winPoints;
-      document.getElementById(`team1LosePoints${matchId}`).value = data.UPCOM.TEAM1.losePoints;
-      document.getElementById(`team1Rank${matchId}`).value = data.UPCOM.TEAM1.rank;
-      document.getElementById(`team1CurrentPoints${matchId}`).value = data.UPCOM.TEAM1.currentPoints;
+      // Определяем текущий статус матча
+      const statusElement = document.getElementById(`statusSelect${matchId}`);
+      const status = statusElement ? statusElement.value.toUpperCase() : "UPCOM";
+      
+      // Если статус FINISHED, то берем данные из FINISHED, иначе из UPCOM
+      const source = (status === "FINISHED") ? data.FINISHED : data.UPCOM;
+      
+      console.log("Загружены данные VRS для матча", matchId, source);
+      
+      document.getElementById(`team1WinPoints${matchId}`).value = source.TEAM1.winPoints;
+      document.getElementById(`team1LosePoints${matchId}`).value = source.TEAM1.losePoints;
+      document.getElementById(`team1Rank${matchId}`).value = source.TEAM1.rank;
+      document.getElementById(`team1CurrentPoints${matchId}`).value = source.TEAM1.currentPoints;
     
-      document.getElementById(`team2WinPoints${matchId}`).value = data.UPCOM.TEAM2.winPoints;
-      document.getElementById(`team2LosePoints${matchId}`).value = data.UPCOM.TEAM2.losePoints;
-      document.getElementById(`team2Rank${matchId}`).value = data.UPCOM.TEAM2.rank;
-      document.getElementById(`team2CurrentPoints${matchId}`).value = data.UPCOM.TEAM2.currentPoints;
+      document.getElementById(`team2WinPoints${matchId}`).value = source.TEAM2.winPoints;
+      document.getElementById(`team2LosePoints${matchId}`).value = source.TEAM2.losePoints;
+      document.getElementById(`team2Rank${matchId}`).value = source.TEAM2.rank;
+      document.getElementById(`team2CurrentPoints${matchId}`).value = source.TEAM2.currentPoints;
     } catch (error) {
       console.error("Ошибка загрузки VRS для матча", matchId, error);
     }
   }
+  
   
   
   
