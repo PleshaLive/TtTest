@@ -2,7 +2,7 @@
 const express = require("express");
 const path = require("path");
 const app = express();
-const port = Number(process.env.PORT) || 3000;
+const port = 3000;
 
 // Логирование входящих запросов
 app.use((req, res, next) => {
