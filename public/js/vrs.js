@@ -50,12 +50,9 @@ export function initVRS() {
     try {
       const res = await fetch(`/api/vrs/${matchId}`);
       if (!res.ok) return;
-      const dataArray = await res.json();
-      // Если ответ всегда массив с одним элементом:
-      const data = dataArray[0]; 
-      const block = (matchStatus === "FINISHED") ? data.FINISHED : data.UPCOM;
+      const data = await res.json();
+      console.log("Загружены данные VRS для матча", matchId, data);
   
-      document.getElementById(`team1WinPoints${matchId}`).value = block.TEAM1.winPoints;
       // Обращаемся к данным из блока UPCOM
       document.getElementById(`team1WinPoints${matchId}`).value = data.UPCOM.TEAM1.winPoints;
       document.getElementById(`team1LosePoints${matchId}`).value = data.UPCOM.TEAM1.losePoints;
