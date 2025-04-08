@@ -15,17 +15,14 @@ async function loadMatchesFromServer() {
     const response = await fetch("/api/matchdata");
     const matches = await response.json();
     
-    // Обновляем поля для каждого матча (предполагается, что у вас matchdata — массив объектов)
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
       
-      // Обновляем поле времени
       const timeInput = document.getElementById(`timeInput${matchIndex}`);
       if (timeInput) {
         timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
       }
       
-      // Обновляем статус матча
       const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
       if (statusSelect) {
         if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -37,7 +34,6 @@ async function loadMatchesFromServer() {
         }
       }
       
-      // Обновляем селекты команд
       const team1Select = document.getElementById(`team1Select${matchIndex}`);
       if (team1Select) {
         team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
@@ -46,21 +42,30 @@ async function loadMatchesFromServer() {
       if (team2Select) {
         team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
       }
-      
-      // Если у вас есть поля для карт, их тоже можно обновлять аналогичным образом
     });
   } catch (error) {
     console.error("Ошибка загрузки matchdata:", error);
   }
 }
 
-// Вызываем загрузку данных при загрузке страницы
+// Функция для получения JSON-данных и вывода их на страницу
+async function updateJsonOutput() {
+  try {
+    const res = await fetch("/api/matchdata");
+    const data = await res.json();
+    document.getElementById("jsonOutput").textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    console.error("Ошибка получения JSON:", error);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   loadMatchesFromServer();
-  loadAllVRS(); // Обновление VRS, если нужно
+  loadAllVRS();
+  updateJsonOutput(); // выводим JSON сразу после загрузки
 });
 
-// Функция автосохранения с использованием дебаунсинга (задержка 500 мс)
+// Функция автосохранения с использованием дебаунсинга (500 мс)
 let autoSaveTimeout;
 function autoSave() {
   if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
@@ -69,7 +74,7 @@ function autoSave() {
       const matchesData = gatherMatchesData();
       const savedMatches = await saveData("/api/matchdata", matchesData);
 
-      const mapVetoData = gatherMapVetoData(matchesData);
+      const mapVetoData = gatherMapVetoData();
       const savedVeto = await saveData("/api/mapveto", mapVetoData);
 
       const vrsData = gatherVRSData();
@@ -83,6 +88,10 @@ function autoSave() {
         savedVeto,
         savedVRS
       });
+      
+      // Обновляем JSON-вывод после сохранения
+      updateJsonOutput();
+      
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
