@@ -173,6 +173,15 @@ app.get("/api/matchdata", (req, res) => {
   res.json(savedMatches);
 });
 
+// Новый эндпоинт для VRS по всем 4 матчам
+app.get("/api/vrs-all", (req, res) => {
+  const allVRS = {};
+  for (let matchId = 1; matchId <= 4; matchId++) {
+    allVRS[matchId] = getVRSResponse(matchId);
+  }
+  res.json(allVRS);
+});
+
 app.get("/api/matchdata/:matchIndex", (req, res) => {
   const index = parseInt(req.params.matchIndex, 10) - 1;
   if (isNaN(index) || index < 0 || index >= savedMatches.length) {
