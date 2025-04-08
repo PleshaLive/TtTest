@@ -99,30 +99,28 @@ function autoSave() {
   autoSaveTimeout = setTimeout(async () => {
     try {
       const matchesData = gatherMatchesData();
-      const savedMatches = await saveData("/api/matchdata", matchesData);
+      await saveData("/api/matchdata", matchesData);
 
       const mapVetoData = gatherMapVetoData();
-      const savedVeto = await saveData("/api/mapveto", mapVetoData);
+      await saveData("/api/mapveto", mapVetoData);
 
       const vrsData = gatherVRSData();
-      const savedVRS = await saveData("/api/vrs", vrsData);
+      await saveData("/api/vrs", vrsData);
 
-      // Обновляем VRS данные после сохранения
+      // После сохранения обновляем VRS интерфейс для каждого матча
       loadAllVRS();
 
-      console.log("Автосохранение прошло успешно", {
-        savedMatches,
-        savedVeto,
-        savedVRS
-      });
+      // Обновляем агрегированный блок с данными (из /api/vrs-all)
+      updateAggregatedVRS();
 
-      // Обновляем JSON-вывод после сохранения
+      console.log("Автосохранение прошло успешно");
       updateJsonOutput();
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
   }, 500);
 }
+
 
 // Привязываем автосохранение ко всем input и select элементам
 document.querySelectorAll("input, select").forEach(element => {
