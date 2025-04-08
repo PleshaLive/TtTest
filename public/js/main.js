@@ -100,5 +100,15 @@ function autoSave() {
 
 // Привязываем автосохранение ко всем input и select элементам
 document.querySelectorAll("input, select").forEach(element => {
-  element.addEventListener("change", autoSave);
+  element.addEventListener("change", async () => {
+    try {
+      const matchesData = gatherMatchesData();
+      await saveData("/api/matchdata", matchesData);
+      // Другие сохранения (mapVeto, VRS) можно также вызывать здесь или по отдельным событиям
+      
+      // Клиент получит socket.io уведомление об обновлении и обновит UI
+    } catch (err) {
+      console.error("Ошибка автосохранения:", err);
+    }
+  });
 });

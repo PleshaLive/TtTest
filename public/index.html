@@ -11,9 +11,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
-      socket.on("reload", () => {
-        console.log("Получено сообщение о перезагрузке, обновляю страницу...");
-        window.location.reload();
+      // Если получаем событие jsonUpdate, обновляем блок JSON
+      socket.on("jsonUpdate", data => {
+        console.log("Получено обновление JSON:", data);
+        document.getElementById("jsonOutput").textContent = JSON.stringify(data, null, 2);
       });
     </script>
 

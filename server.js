@@ -202,8 +202,10 @@ app.post("/api/matchdata", (req, res) => {
   });
   
   saveDataToFile();
-  // Уведомляем подключенных клиентов через socket.io с задержкой 500 мс
-  setTimeout(() => io.emit("reload"), 500);
+  
+  // Вместо перезагрузки отправляем событие jsonUpdate с актуальными данными
+  io.emit("jsonUpdate", savedMatches);
+  
   res.json(savedMatches);
 });
 
