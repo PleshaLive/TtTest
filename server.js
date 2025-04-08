@@ -1,28 +1,26 @@
 // server.js
-
 const express = require("express");
 const path = require("path");
-
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
-// Логирование входящих запросов (для отладки)
+// Логирование входящих запросов
 app.use((req, res, next) => {
   console.log(`[LOG] ${req.method} ${req.path}`);
   next();
 });
 
-// Эндпоинт для Health Check – Railway будет обращаться сюда
+// Эндпоинт для Health Check
 app.get("/health", (req, res) => {
   res.status(200).json({ ok: true });
 });
 
-// Роут для корневого пути – отдаём index.html
+// Корневой роут: возвращаем простой текст
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.send("Hello World! — приложение работает");
 });
 
-// Раздаем статические файлы из папки public
+// Раздаем статику из папки public
 app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(port, "0.0.0.0", () => {
