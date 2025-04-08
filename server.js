@@ -234,29 +234,25 @@ app.post("/api/mapveto", (req, res) => {
 
 // --- API для VRS ---
 function getVRSResponse(matchId) {
-  // Используем сохранённые VRS-данные или пустые объекты
+  // Если данных нет, подставляем пустые объекты
   const vrsData = savedVRS[matchId] || {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints: "" },
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints: "" }
   };
-  // Матч (из savedMatches) – нужен для определения логотипов и статуса
   const match = savedMatches[matchId - 1] || {};
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
 
-  // Определим пустой объект для блока UPCOM — если матч завершён, на клиенте в этом блоке будут пустые поля:
+  // Пустой объект для блока UPCOM (при FINISHED он должен быть пустым)
   const emptyUpcom = {
-    TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team1Logo },
-    TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
+    TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints: "", logo: team1Logo },
+    TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints: "", logo: team2Logo }
   };
 
-  // По умолчанию выставляем фоны как "idle"
   let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
   let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
 
-  // Если матч завершён, формируем блок FINISHED с сохранёнными данными.
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
-    // Определяем, кто победитель
     if (match.TEAMWINNER === match.FINISHED_TEAM1) {
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
       winBgTeam2 = "C:\\projects\\NewTimer\\files\\lose.png";
@@ -264,20 +260,19 @@ function getVRSResponse(matchId) {
         UPCOM: emptyUpcom,
         FINISHED: {
           TEAM1: {
-            winPoints: formatWinPoints(vrsData.TEAM1.winPoints), // форматирование победных очков
-            losePoints: "",
+            winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
+            losePoints: "",  // оставляем пустым
             rank: vrsData.TEAM1.rank,
             currentPoints_win: vrsData.TEAM1.currentPoints,
-            currentPoints_lose: "",
+            currentPoints_lose: "", // пусто
             logo: team1Logo
           },
           TEAM2: {
             winPoints: "",
-            // гарантируем, что значение будет отрицательным:
             losePoints: -Math.abs(Number(vrsData.TEAM2.losePoints)),
             rank: vrsData.TEAM2.rank,
-            currentPoints_win: "",
-            currentPoints_lose: vrsData.TEAM2.currentPoints,
+            currentPoints_win: vrsData.TEAM2.currentPoints,
+            currentPoints_lose: "",
             logo: team2Logo
           }
         },
@@ -311,7 +306,7 @@ function getVRSResponse(matchId) {
         WIN_BG_TEAM_2: winBgTeam2
       }];
     } else {
-      // Если победитель не определён — возвращаем пустые данные
+      // Если победитель не определен, возвращаем обе секции пустыми
       return [{
         UPCOM: emptyUpcom,
         FINISHED: emptyUpcom,
@@ -321,7 +316,7 @@ function getVRSResponse(matchId) {
     }
   }
   
-  // Если статус не FINISHED (например, UPCOM или LIVE) возвращаем данные из savedVRS (при этом losePoints преобразуем в отрицательное)
+  // Если статус не FINISHED, возвращаем данные из savedVRS с заполненной секцией UPCOM
   return [{
     UPCOM: {
       TEAM1: {
