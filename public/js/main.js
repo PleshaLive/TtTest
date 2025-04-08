@@ -36,7 +36,7 @@ async function loadMatchesFromServer() {
 
       const team1Select = document.getElementById(`team1Select${matchIndex}`);
       if (team1Select) {
-        // Здесь важно, чтобы сохранённое значение (например, UPCOM_TEAM1) подтягивалось
+        // Здесь подставляем выбранное значение из сохранённых данных
         team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
       }
       const team2Select = document.getElementById(`team2Select${matchIndex}`);
@@ -63,11 +63,15 @@ async function updateJsonOutput() {
   }
 }
 
-// После загрузки DOM – подгружаем данные и обновляем интерфейс
+// При загрузке страницы даем время на инициализацию селектов со списком команд,
+// затем загружаем сохранённые данные и обновляем интерфейс.
 window.addEventListener("DOMContentLoaded", () => {
-  loadMatchesFromServer();
-  loadAllVRS();
-  updateJsonOutput(); // выводим JSON сразу после загрузки
+  // Задержка 500 мс для того, чтобы initMatches и populateTeamSelects успели заполнить селекты
+  setTimeout(() => {
+    loadMatchesFromServer();
+    loadAllVRS();
+    updateJsonOutput(); // выводим JSON сразу после загрузки
+  }, 500);
 });
 
 // Функция автосохранения с использованием дебаунсинга (500 мс)
@@ -102,15 +106,14 @@ function autoSave() {
   }, 500);
 }
 
-// Привязка автосохранения к изменениям всех input и select элементов
+// Привязываем автосохранение ко всем input и select элементам
 document.querySelectorAll("input, select").forEach(element => {
   element.addEventListener("change", async () => {
     try {
       const matchesData = gatherMatchesData();
       await saveData("/api/matchdata", matchesData);
-      // Если нужно, можно также сохранять mapVeto и VRS данные тут,
-      // но autoSave() уже это делает с дебаунсом.
-      // В данном примере оба механизма могут быть активны; если сохранение происходит дважды, оставьте только один вариант.
+      // Если необходимо, можно также сохранять данные для mapVeto и VRS тут,
+      // но автоSave() уже это делает с дебаунсом.
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
