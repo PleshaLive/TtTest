@@ -401,41 +401,37 @@ function saveState() {
   const state = [];
   for (let m = 1; m <= 4; m++) {
     const col = document.querySelector(`.match-column[data-match="${m}"]`);
-
-    // карты
+    
+    // Получаем данные по картам
     const maps = Array.from(col.querySelectorAll(".map-row")).map(row => ({
-      name:  row.querySelector(".map-name-select").value,
+      name: row.querySelector(".map-name-select").value,
       score: row.querySelector(".map-score-input").value.trim()
     }));
-
-    // VRS‑поля
-    // const vrsInputs = Array.from(
-      //  document.querySelectorAll(`#vrsBlock${m} .vrs-input`)
-      // ).map(i => i.value.trim());
-
-    // veto‑поля
+    
+    // Получаем данные veto – оставляем без изменений
     const vetoRow = Array.from(
       document.querySelectorAll(`#vetoTable tr[data-index]`)
     ).map(tr => ({
       action: tr.querySelector(".veto-action").value,
-      map:    tr.querySelector(".veto-map").value,
-      team:   tr.querySelector(".veto-team").value,
-      side:   tr.querySelector(".veto-side").value
+      map: tr.querySelector(".veto-map").value,
+      team: tr.querySelector(".veto-team").value,
+      side: tr.querySelector(".veto-side").value
     }));
-
+    
+    // Формируем объект состояния для матча (без данных VRS)
     state.push({
-      status:  document.getElementById("statusSelect"+m).value,
-      time:    document.getElementById("timeInput"+m).value.trim(),
-      team1:   document.getElementById("team1Select"+m).value,
-      team2:   document.getElementById("team2Select"+m).value,
-      winner:  col.dataset.winner || "",
+      status: document.getElementById("statusSelect" + m).value,
+      time: document.getElementById("timeInput" + m).value.trim(),
+      team1: document.getElementById("team1Select" + m).value,
+      team2: document.getElementById("team2Select" + m).value,
+      winner: col.getAttribute("data-winner") || "",
       maps,
-      vrs:     vrsInputs,
-      veto:    vetoRow
+      veto: vetoRow
     });
   }
   localStorage.setItem("matchesState", JSON.stringify(state));
 }
+
 
 // ----------------------
 // 2) Загружаем сохранённое
@@ -444,50 +440,50 @@ function loadState() {
   const str = localStorage.getItem("matchesState");
   if (!str) return;
   let state;
-  try { state = JSON.parse(str); } catch { return; }
-
+  try {
+    state = JSON.parse(str);
+  } catch {
+    return;
+  }
   state.forEach((mState, i) => {
     const m = i + 1;
     const col = document.querySelector(`.match-column[data-match="${m}"]`);
-
+    
     // статус, время, команды
-    document.getElementById("statusSelect"+m).value = mState.status;
-    document.getElementById("timeInput"+m).value     = mState.time;
-    document.getElementById("team1Select"+m).value  = mState.team1;
-    document.getElementById("team2Select"+m).value  = mState.team2;
-
+    document.getElementById("statusSelect" + m).value = mState.status;
+    document.getElementById("timeInput" + m).value = mState.time;
+    document.getElementById("team1Select" + m).value = mState.team1;
+    document.getElementById("team2Select" + m).value = mState.team2;
+    
     // победитель
     col.setAttribute("data-winner", mState.winner);
-
+    
     // карты
-    col.querySelectorAll(".map-row").forEach((row,j) => {
-      row.querySelector(".map-name-select").value  = mState.maps[j]?.name  || "";
+    col.querySelectorAll(".map-row").forEach((row, j) => {
+      row.querySelector(".map-name-select").value = mState.maps[j]?.name || "";
       row.querySelector(".map-score-input").value = mState.maps[j]?.score || "";
     });
 
-    // VRS‑поля
-    // const vrsInputs = document.querySelectorAll(`#vrsBlock${m} .vrs-input`);
-    // mState.vrs?.forEach((val, idx) => {
-    //  if (vrsInputs[idx]) vrsInputs[idx].value = val;
-    // });
-
+    // Не загружаем VRS из localStorage – оставляем поля как есть
+    // (так loadAllVRS() загрузит актуальные данные с сервера)
+    
     // veto‑поля
     const vetoRows = document.querySelectorAll(`#vetoTable tr[data-index]`);
     mState.veto?.forEach((v, idx) => {
       const tr = vetoRows[idx];
       if (!tr) return;
       tr.querySelector(".veto-action").value = v.action;
-      tr.querySelector(".veto-map").value    = v.map;
-      tr.querySelector(".veto-team").value   = v.team;
-      tr.querySelector(".veto-side").value   = v.side;
+      tr.querySelector(".veto-map").value = v.map;
+      tr.querySelector(".veto-team").value = v.team;
+      tr.querySelector(".veto-side").value = v.side;
     });
-
-    // обновляем UI
-    updateStatusColor(document.getElementById("statusSelect"+m));
+    
+    // Обновляем UI
+    updateStatusColor(document.getElementById("statusSelect" + m));
     updateWinnerButtonLabels(m);
     refreshWinnerHighlight(m);
-    updateTeamLogoPreview(m,1);
-    updateTeamLogoPreview(m,2);
+    updateTeamLogoPreview(m, 1);
+    updateTeamLogoPreview(m, 2);
   });
 }
 
