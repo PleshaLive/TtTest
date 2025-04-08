@@ -1,37 +1,40 @@
 // server.js
 const express = require("express");
-const basicAuth = require("express-basic-auth"); // если требуется
 const path = require("path");
 const fs = require("fs");
-
-const app = express();
-const port = Number(process.env.PORT) || 3000;
-
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 
-// Логирование входящих запросов для отладки
+// Создаем приложение Express
+const app = express();
+
+// Используем переменную окружения PORT (приводим к числу), либо 3000
+const port = Number(process.env.PORT) || 3000;
+
+// Создаем логирование входящих запросов (для отладки)
 app.use((req, res, next) => {
   console.log("[REQ]", req.method, req.path);
   next();
 });
 
-// Health-check: Railway может проверять этот эндпоинт
+// Роут для Health Check (полезно для облачных платформ)
 app.get("/health", (req, res) => {
   res.status(200).json({ ok: true });
 });
 
-// Middleware: парсеры и сессии
+// Middleware: парсеры формы и куков
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// Настройка сессий (при необходимости, для авторизации)
 app.use(session({
   secret: "322223",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // для HTTPS установить true
+  cookie: { secure: false } // если используете HTTPS, поставьте true
 }));
 
-// Страница логина (файлы login.html и login.css должны находиться в public)
+// Роут для страницы логина (файл login.html должен находиться в папке public)
 app.get("/login", (req, res) => {
   if (req.session.authenticated) return res.redirect("/");
   res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -46,8 +49,8 @@ app.post("/login", (req, res) => {
   res.redirect("/login?error=1");
 });
 
-// Роут для корня: если пользователь не залогинен, перенаправляет на /login,
-// иначе отдает index.html
+// Роут для корневого пути: если пользователь не аутентифицирован – редирект на /login,
+// иначе возвращается index.html из папки public
 app.get("/", (req, res) => {
   if (!req.session.authenticated) {
     return res.redirect("/login");
@@ -55,7 +58,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Middleware авторизации: все запросы, не относящиеся к API или логину, редиректят на /login
+// Middleware авторизации: все запросы, кроме /api, /login, /login.css, /health, проходят только если аутентификация есть
 app.use((req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
@@ -69,16 +72,21 @@ app.use((req, res, next) => {
   res.redirect("/login");
 });
 
+// Используем JSON-парсер и раздаем статику из папки public
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Дефолтные пути для логотипов (если значение пустое или содержит "none.png")
+/* ====================
+   Работа с данными
+   ==================== */
+
+// Дефолтные пути для логотипов (если значение отсутствует или "none.png")
 const defaultTeam1Logo = "C:\\projects\\vMix_score\\public\\logos\\default1.png";
 const defaultTeam2Logo = "C:\\projects\\vMix_score\\public\\logos\\default2.png";
 
-// Хранение данных в памяти
-let savedMatches = [];
-let savedMapVeto = {};
+// Данные хранятся в памяти
+let savedMatches = [];    // данные матчей
+let savedMapVeto = {};    // данные Map Veto
 let savedVRS = {
   1: {
     TEAM1: { winPoints: 35, losePoints: -35, rank: 4, currentPoints: 84 },
@@ -98,10 +106,10 @@ let savedVRS = {
   }
 };
 
-// Путь к файлу базы данных
+// Путь к файлу базы данных (db.json)
 const dbFilePath = path.join(__dirname, "db.json");
 
-// Функция загрузки данных из db.json (если файла нет, создаётся новый)
+// Функция загрузки данных из db.json (если файл не существует, он создается)
 function loadDataFromFile() {
   if (!fs.existsSync(dbFilePath)) {
     fs.writeFileSync(dbFilePath, JSON.stringify({
@@ -128,7 +136,7 @@ function saveDataToFile() {
   fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
 }
 
-// Функция форматирования winPoints
+// Функция форматирования winPoints (если число положительное, добавляется знак "+")
 function formatWinPoints(value) {
   if (value === "" || value === null || value === undefined) return "";
   const num = Number(value);
@@ -156,9 +164,11 @@ function getLogo(match, team) {
   return rawLogo;
 }
 
-// -------------
-// Эндпоинты для матчей
-// -------------
+/* ====================
+   API эндпоинты
+   ==================== */
+
+// --- API для матчей ---
 app.get("/api/matchdata", (req, res) => {
   res.json(savedMatches);
 });
@@ -174,8 +184,8 @@ app.get("/api/matchdata/:matchIndex", (req, res) => {
 app.post("/api/matchdata", (req, res) => {
   savedMatches = Array.isArray(req.body) ? req.body : [req.body];
   console.log("Получены matchdata:", savedMatches);
-  
-  // Если матч завершён, обновляем VRS для него
+
+  // Обновляем VRS для завершенных матчей
   savedMatches.forEach((match, idx) => {
     const matchId = idx + 1;
     if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -192,29 +202,25 @@ app.post("/api/matchdata", (req, res) => {
       console.log(`Обновлены VRS для матча ${matchId}:`, vrsData);
     }
   });
-  
+
   saveDataToFile();
+  // Уведомляем клиентов через socket.io с небольшим интервалом
   setTimeout(() => io.emit("reload"), 500);
   res.json(savedMatches);
 });
 
-// -------------
-// Эндпоинты для Map Veto
-// -------------
+// --- API для Map Veto ---
 app.get("/api/mapveto", (req, res) => res.json(savedMapVeto));
 
 app.post("/api/mapveto", (req, res) => {
   savedMapVeto = req.body;
   console.log("Получены данные mapveto:", savedMapVeto);
-  
   saveDataToFile();
   setTimeout(() => io.emit("reload"), 500);
   res.json(savedMapVeto);
 });
 
-// -------------
-// Эндпоинты для VRS для каждого матча
-// -------------
+// --- API для VRS ---
 function getVRSResponse(matchId) {
   const vrsData = savedVRS[matchId] || {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints: "" },
@@ -223,15 +229,15 @@ function getVRSResponse(matchId) {
   const match = savedMatches[matchId - 1] || {};
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
-  
+
   const emptyFin = {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team1Logo },
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
   };
-  
+
   let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
   let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
-  
+
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
     if (match.TEAMWINNER === match.FINISHED_TEAM1) {
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
@@ -294,7 +300,7 @@ function getVRSResponse(matchId) {
       };
     }
   }
-  
+
   return {
     UPCOM: {
       TEAM1: {
@@ -318,18 +324,10 @@ function getVRSResponse(matchId) {
   };
 }
 
-app.get("/api/vrs1", (req, res) => {
-  res.json([getVRSResponse(1)]);
-});
-app.get("/api/vrs2", (req, res) => {
-  res.json([getVRSResponse(2)]);
-});
-app.get("/api/vrs3", (req, res) => {
-  res.json([getVRSResponse(3)]);
-});
-app.get("/api/vrs4", (req, res) => {
-  res.json([getVRSResponse(4)]);
-});
+app.get("/api/vrs1", (req, res) => { res.json([getVRSResponse(1)]); });
+app.get("/api/vrs2", (req, res) => { res.json([getVRSResponse(2)]); });
+app.get("/api/vrs3", (req, res) => { res.json([getVRSResponse(3)]); });
+app.get("/api/vrs4", (req, res) => { res.json([getVRSResponse(4)]); });
 
 app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
@@ -339,9 +337,7 @@ app.post("/api/vrs", (req, res) => {
   res.json(savedVRS);
 });
 
-// -------------
-// Эндпоинт для списка команд (из файла data.json)
-// -------------
+// --- API для списка команд (из файла data.json) ---
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
   fs.readFile(teamsDataFile, "utf8", (err, data) => {
@@ -359,22 +355,16 @@ app.get("/api/teams", (req, res) => {
   });
 });
 
-// Создаем HTTP-сервер и подключаем socket.io
+/* ====================
+   Socket.io и запуск сервера
+   ==================== */
+
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// Если требуется, можно добавить наблюдение за index.html (для разработки)
-// const indexPath = path.join(__dirname, "public", "index.html");
-// fs.watch(indexPath, (eventType, filename) => {
-//   if (filename) {
-//     console.log(`index.html изменён (${eventType}). Отправляю сообщение обновления.`);
-//     io.emit("reload");
-//   }
-// });
-
-// Запускаем сервер, привязываясь к 0.0.0.0 (что требуется на многих облачных платформах)
+// Запускаем сервер и привязываемся к 0.0.0.0 (требуется для облачных платформ)
 server.listen(port, "0.0.0.0", () => {
   console.log(`Сервер запущен на http://0.0.0.0:${port}`);
 });
