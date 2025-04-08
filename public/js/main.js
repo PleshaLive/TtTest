@@ -3,13 +3,6 @@ import { initMatches, gatherMatchesData } from "./matches.js";
 import { initMapVeto, gatherMapVetoData } from "./mapVeto.js";
 import { initVRS, loadAllVRS, gatherVRSData } from "./vrs.js";
 import { saveData } from "./api.js";
-import { initVRS, loadAllVRS, loadVRSState } from "./vrs.js";
-
-// После initVRS() можно вызвать loadVRSState() для восстановления предыдущего состояния VRS:
-initVRS();
-loadVRSState();
-// Затем попытаться загрузить актуальные данные с сервера:
-loadAllVRS();
 
 // Инициализация модулей
 initMatches();
