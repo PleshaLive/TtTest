@@ -108,14 +108,7 @@ function autoSave() {
 
 // Привязываем автосохранение ко всем input и select элементам
 document.querySelectorAll("input, select").forEach(element => {
-  element.addEventListener("change", async () => {
-    try {
-      const matchesData = gatherMatchesData();
-      await saveData("/api/matchdata", matchesData);
-      // Если необходимо, можно также сохранять данные для mapVeto и VRS тут,
-      // но автоSave() уже это делает с дебаунсом.
-    } catch (err) {
-      console.error("Ошибка автосохранения:", err);
-    }
+  element.addEventListener("change", () => {
+    autoSave(); // теперь при каждом изменении полей вызовется autoSave
   });
 });
