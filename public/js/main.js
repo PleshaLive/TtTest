@@ -14,15 +14,15 @@ async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
     const matches = await response.json();
-    
+
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
-      
+
       const timeInput = document.getElementById(`timeInput${matchIndex}`);
       if (timeInput) {
         timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
       }
-      
+
       const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
       if (statusSelect) {
         if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -33,9 +33,10 @@ async function loadMatchesFromServer() {
           statusSelect.value = "UPCOM";
         }
       }
-      
+
       const team1Select = document.getElementById(`team1Select${matchIndex}`);
       if (team1Select) {
+        // Здесь важно, чтобы сохранённое значение (например, UPCOM_TEAM1) подтягивалось
         team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
       }
       const team2Select = document.getElementById(`team2Select${matchIndex}`);
@@ -53,12 +54,16 @@ async function updateJsonOutput() {
   try {
     const res = await fetch("/api/matchdata");
     const data = await res.json();
-    document.getElementById("jsonOutput").textContent = JSON.stringify(data, null, 2);
+    const jsonOutput = document.getElementById("jsonOutput");
+    if (jsonOutput) {
+      jsonOutput.textContent = JSON.stringify(data, null, 2);
+    }
   } catch (error) {
     console.error("Ошибка получения JSON:", error);
   }
 }
 
+// После загрузки DOM – подгружаем данные и обновляем интерфейс
 window.addEventListener("DOMContentLoaded", () => {
   loadMatchesFromServer();
   loadAllVRS();
@@ -88,25 +93,24 @@ function autoSave() {
         savedVeto,
         savedVRS
       });
-      
+
       // Обновляем JSON-вывод после сохранения
       updateJsonOutput();
-      
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
   }, 500);
 }
 
-// Привязываем автосохранение ко всем input и select элементам
+// Привязка автосохранения к изменениям всех input и select элементов
 document.querySelectorAll("input, select").forEach(element => {
   element.addEventListener("change", async () => {
     try {
       const matchesData = gatherMatchesData();
       await saveData("/api/matchdata", matchesData);
-      // Другие сохранения (mapVeto, VRS) можно также вызывать здесь или по отдельным событиям
-      
-      // Клиент получит socket.io уведомление об обновлении и обновит UI
+      // Если нужно, можно также сохранять mapVeto и VRS данные тут,
+      // но autoSave() уже это делает с дебаунсом.
+      // В данном примере оба механизма могут быть активны; если сохранение происходит дважды, оставьте только один вариант.
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
