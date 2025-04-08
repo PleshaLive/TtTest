@@ -268,6 +268,8 @@ export function gatherMatchesData() {
       : defaultLogo;
     const liveVs = statusText === "LIVE" ? "vs" : "";
 
+    const upcomCest = getVal("upcomCest");
+
     const upcomObj = {
       UPCOM_MATCH_STATUS: statusText === "UPCOM" ? statusText : "",
       UPCOM_TIME:         statusText === "UPCOM" ? timeVal : "",
@@ -281,7 +283,7 @@ export function gatherMatchesData() {
       UPCOM_MAP2_SCORE:   statusText === "UPCOM" ? maps.MAP2_SCORE : "",
       UPCOM_MAP3:         statusText === "UPCOM" ? maps.MAP3 : "",
       UPCOM_MAP3_SCORE:   statusText === "UPCOM" ? maps.MAP3_SCORE : "",
-      UPCOM_Cest:         statusText === "UPCOM" ? upcomCest : "",
+      UPCOM_Cest: statusText === "UPCOM" ? "cest" : "",
       UPCOM_RectangleUP:  statusText === "UPCOM" ? upcomRectangleUp : defaultLogo,
       UPCOM_RectangleLOW: statusText === "UPCOM" ? upcomRectangleLow : defaultLogo,
       UPCOM_vs_mini:      statusText === "UPCOM" ? upcomVsMini : "",
