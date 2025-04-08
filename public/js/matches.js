@@ -409,9 +409,9 @@ function saveState() {
     }));
 
     // VRS‑поля
-    const vrsInputs = Array.from(
-      document.querySelectorAll(`#vrsBlock${m} .vrs-input`)
-    ).map(i => i.value.trim());
+    // const vrsInputs = Array.from(
+      //  document.querySelectorAll(`#vrsBlock${m} .vrs-input`)
+      // ).map(i => i.value.trim());
 
     // veto‑поля
     const vetoRow = Array.from(
@@ -466,10 +466,10 @@ function loadState() {
     });
 
     // VRS‑поля
-    const vrsInputs = document.querySelectorAll(`#vrsBlock${m} .vrs-input`);
-    mState.vrs?.forEach((val, idx) => {
-      if (vrsInputs[idx]) vrsInputs[idx].value = val;
-    });
+    // const vrsInputs = document.querySelectorAll(`#vrsBlock${m} .vrs-input`);
+    // mState.vrs?.forEach((val, idx) => {
+    //  if (vrsInputs[idx]) vrsInputs[idx].value = val;
+    // });
 
     // veto‑поля
     const vetoRows = document.querySelectorAll(`#vetoTable tr[data-index]`);
