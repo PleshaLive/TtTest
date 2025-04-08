@@ -65,7 +65,7 @@ export function initVRS() {
   }
   
   export function gatherVRSData() {
-    const vrsData = {};
+    const vrsData = [{}];
     for (let i = 1; i <= 4; i++) {
       vrsData[i] = {
         TEAM1: {
