@@ -241,15 +241,15 @@ function getVRSResponse(matchId) {
   const match = savedMatches[matchId - 1] || {};
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
-  
+
   const emptyFin = {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team1Logo },
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
   };
-  
+
   let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
   let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
-  
+
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
     if (match.TEAMWINNER === match.FINISHED_TEAM1) {
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
@@ -259,7 +259,7 @@ function getVRSResponse(matchId) {
         FINISHED: {
           TEAM1: {
             winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-            losePoints: "",  // здесь оставляем пустым, если матч завершён
+            losePoints: "",  // оставляем пустым для победившей команды
             rank: vrsData.TEAM1.rank,
             currentPoints_win: vrsData.TEAM1.currentPoints,
             currentPoints_lose: "",
@@ -313,11 +313,12 @@ function getVRSResponse(matchId) {
     }
   }
   
+  // Для не FINISHED статуса всегда принудительно делаем losePoints отрицательными
   return {
     UPCOM: {
       TEAM1: {
         winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-        losePoints: -Math.abs(vrsData.TEAM1.losePoints), // гарантируем отрицательное значение
+        losePoints: -Math.abs(vrsData.TEAM1.losePoints),
         rank: vrsData.TEAM1.rank,
         currentPoints: vrsData.TEAM1.currentPoints,
         logo: team1Logo
@@ -335,6 +336,7 @@ function getVRSResponse(matchId) {
     WIN_BG_TEAM_2: "C:\\projects\\NewTimer\\files\\idle.png"
   };
 }
+
 
 
 app.get("/api/vrs/:id", (req, res) => {
