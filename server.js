@@ -242,100 +242,54 @@ function getVRSResponse(matchId) {
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
 
-  const emptyFin = {
-    TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team1Logo },
-    TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
+  // Определяем стандартные значения для отображения (все значения из savedVRS)
+  const upcomData = {
+    TEAM1: {
+      winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
+      losePoints: -Math.abs(vrsData.TEAM1.losePoints),
+      rank: vrsData.TEAM1.rank,
+      currentPoints: vrsData.TEAM1.currentPoints,
+      logo: team1Logo
+    },
+    TEAM2: {
+      winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
+      losePoints: -Math.abs(vrsData.TEAM2.losePoints),
+      rank: vrsData.TEAM2.rank,
+      currentPoints: vrsData.TEAM2.currentPoints,
+      logo: team2Logo
+    }
   };
 
-  let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
-  let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
-
+  // Если матч завершён, возвращаем данные и для UPCOM и для FINISHED одинаково.
+  // Если потребуется можно модифицировать FINISHED отдельно.
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
+    let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
+    let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
+
     if (match.TEAMWINNER === match.FINISHED_TEAM1) {
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
       winBgTeam2 = "C:\\projects\\NewTimer\\files\\lose.png";
-      return {
-        UPCOM: emptyFin,
-        FINISHED: {
-          TEAM1: {
-            winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-            losePoints: "",  // оставляем пустым для победившей команды
-            rank: vrsData.TEAM1.rank,
-            currentPoints_win: vrsData.TEAM1.currentPoints,
-            currentPoints_lose: "",
-            logo: team1Logo
-          },
-          TEAM2: {
-            winPoints: "",
-            losePoints: -Math.abs(vrsData.TEAM2.losePoints),
-            rank: vrsData.TEAM2.rank,
-            currentPoints_win: "",
-            currentPoints_lose: vrsData.TEAM2.currentPoints,
-            logo: team2Logo
-          }
-        },
-        WIN_BG_TEAM_1: winBgTeam1,
-        WIN_BG_TEAM_2: winBgTeam2
-      };
     } else if (match.TEAMWINNER === match.FINISHED_TEAM2) {
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\lose.png";
       winBgTeam2 = "C:\\projects\\NewTimer\\files\\win.png";
-      return {
-        UPCOM: emptyFin,
-        FINISHED: {
-          TEAM1: {
-            winPoints: "",
-            losePoints: -Math.abs(vrsData.TEAM1.losePoints),
-            rank: vrsData.TEAM1.rank,
-            currentPoints_win: "",
-            currentPoints_lose: vrsData.TEAM1.currentPoints,
-            logo: team1Logo
-          },
-          TEAM2: {
-            winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
-            losePoints: "",
-            rank: vrsData.TEAM2.rank,
-            currentPoints_win: vrsData.TEAM2.currentPoints,
-            currentPoints_lose: "",
-            logo: team2Logo
-          }
-        },
-        WIN_BG_TEAM_1: winBgTeam1,
-        WIN_BG_TEAM_2: winBgTeam2
-      };
-    } else {
-      return {
-        UPCOM: emptyFin,
-        FINISHED: emptyFin,
-        WIN_BG_TEAM_1: winBgTeam1,
-        WIN_BG_TEAM_2: winBgTeam2
-      };
     }
+    return {
+      UPCOM: upcomData,
+      FINISHED: upcomData, // здесь возвращаем те же данные, можно их индивидуально форматировать
+      WIN_BG_TEAM_1: winBgTeam1,
+      WIN_BG_TEAM_2: winBgTeam2
+    };
   }
   
-  // Для не FINISHED статуса всегда принудительно делаем losePoints отрицательными
+  // Если матч не завершён, просто возвращаем данные в блоке UPCOM
   return {
-    UPCOM: {
-      TEAM1: {
-        winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-        losePoints: -Math.abs(vrsData.TEAM1.losePoints),
-        rank: vrsData.TEAM1.rank,
-        currentPoints: vrsData.TEAM1.currentPoints,
-        logo: team1Logo
-      },
-      TEAM2: {
-        winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
-        losePoints: -Math.abs(vrsData.TEAM2.losePoints),
-        rank: vrsData.TEAM2.rank,
-        currentPoints: vrsData.TEAM2.currentPoints,
-        logo: team2Logo
-      }
-    },
-    FINISHED: emptyFin,
+    UPCOM: upcomData,
+    FINISHED: {},
     WIN_BG_TEAM_1: "C:\\projects\\NewTimer\\files\\idle.png",
     WIN_BG_TEAM_2: "C:\\projects\\NewTimer\\files\\idle.png"
   };
 }
+
 
 
 
