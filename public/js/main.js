@@ -9,13 +9,13 @@ initMatches();
 initMapVeto();
 initVRS();
 
-// Функция для загрузки сохранённых данных с сервера и обновления UI
+// Функция загрузки сохранённых данных с сервера и обновления UI
 async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
     const matches = await response.json();
     
-    // Обновляем поля для каждого матча (matchdata — массив объектов)
+    // Обновляем поля для каждого матча (matchdata – массив объектов)
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
       
@@ -35,8 +35,8 @@ async function loadMatchesFromServer() {
         } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
           statusSelect.value = "UPCOM";
         }
-        // Если у вас функция для обновления цвета статуса, вызовите её тут,
-        // например: updateStatusColor(statusSelect);
+        // Здесь можно вызвать функцию обновления цвета статуса, если она есть:
+        // updateStatusColor(statusSelect);
       }
       
       // Обновляем селекты команд
@@ -49,8 +49,8 @@ async function loadMatchesFromServer() {
         team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
       }
       
-      // Если у вас раньше работали функции обновления кнопок победителя,
-      // не забудьте их вызвать, например:
+      // Если раньше работали функции обновления кнопок-победителя,
+      // их можно вызвать здесь:
       // updateWinnerButtonLabels(matchIndex);
       // refreshWinnerHighlight(matchIndex);
     });
@@ -59,10 +59,10 @@ async function loadMatchesFromServer() {
   }
 }
 
-// При загрузке страницы получаем сохранённые данные и обновляем VRS
+// Вызываем загрузку данных при загрузке страницы
 window.addEventListener("DOMContentLoaded", () => {
   loadMatchesFromServer();
-  loadAllVRS();
+  loadAllVRS(); // Обновление VRS, если требуется
 });
 
 // Функция автосохранения (debounce 500 мс)
@@ -73,17 +73,21 @@ function autoSave() {
     try {
       const matchesData = gatherMatchesData();
       const savedMatches = await saveData("/api/matchdata", matchesData);
-      
+
       const mapVetoData = gatherMapVetoData();
       const savedVeto = await saveData("/api/mapveto", mapVetoData);
-      
+
       const vrsData = gatherVRSData();
       const savedVRS = await saveData("/api/vrs", vrsData);
-      
-      // Обновляем VRS данные после автосохранения
+
+      // Обновляем VRS данные после сохранения
       loadAllVRS();
-      
-      console.log("Автосохранение прошло успешно", { savedMatches, savedVeto, savedVRS });
+
+      console.log("Автосохранение прошло успешно", {
+        savedMatches,
+        savedVeto,
+        savedVRS
+      });
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
@@ -95,9 +99,12 @@ document.querySelectorAll("input, select").forEach(element => {
   element.addEventListener("change", autoSave);
 });
 
-// Подключаем socket.io: при получении события "reload" перезагружаем данные,
+// Подключаем socket.io и обновляем данные без полной перезагрузки страницы
 const socket = io();
 socket.on("reload", async () => {
   console.log("Получено событие обновления, загружаю свежие данные...");
-  await loadMatchesFromServer();
+  // Используем задержку 1500 мс, чтобы изменения успели сохраниться на сервере
+  setTimeout(async () => {
+    await loadMatchesFromServer();
+  }, 1500);
 });
