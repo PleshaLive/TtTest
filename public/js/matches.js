@@ -268,8 +268,6 @@ export function gatherMatchesData() {
       : defaultLogo;
     const liveVs = statusText === "LIVE" ? "vs" : "";
 
-    const upcomCest = getVal("upcomCest");
-
     const upcomObj = {
       UPCOM_MATCH_STATUS: statusText === "UPCOM" ? statusText : "",
       UPCOM_TIME:         statusText === "UPCOM" ? timeVal : "",
