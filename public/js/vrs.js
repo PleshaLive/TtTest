@@ -51,34 +51,38 @@ export function initVRS() {
       const res = await fetch(`/api/vrs/${matchId}`);
       if (!res.ok) return;
       const dataArray = await res.json();
-      if (!Array.isArray(dataArray) || dataArray.length === 0) {
-        console.error("Нет данных для матча", matchId);
-        return;
-      }
-      const data = dataArray[0]; // сервер возвращает массив с одним элементом
+      if (!Array.isArray(dataArray) || dataArray.length === 0) return;
+      const data = dataArray[0]; // берём первый элемент
   
-      // Определяем текущий статус матча
-      const statusElement = document.getElementById(`statusSelect${matchId}`);
-      const status = statusElement ? statusElement.value.toUpperCase() : "UPCOM";
+      // Вспомогательная функция для выбора значения из блока UPCOM, если оно есть,
+      // или из FINISHED, если в UPCOM пусто
+      const chooseValue = (upcom, finished) =>
+        (upcom !== "" && upcom !== undefined && upcom !== null)
+          ? upcom : finished;
       
-      // Если статус FINISHED, то берем данные из FINISHED, иначе из UPCOM
-      const source = (status === "FINISHED") ? data.FINISHED : data.UPCOM;
-      
-      console.log("Загружены данные VRS для матча", matchId, source);
-      
-      document.getElementById(`team1WinPoints${matchId}`).value = source.TEAM1.winPoints;
-      document.getElementById(`team1LosePoints${matchId}`).value = source.TEAM1.losePoints;
-      document.getElementById(`team1Rank${matchId}`).value = source.TEAM1.rank;
-      document.getElementById(`team1CurrentPoints${matchId}`).value = source.TEAM1.currentPoints;
-    
-      document.getElementById(`team2WinPoints${matchId}`).value = source.TEAM2.winPoints;
-      document.getElementById(`team2LosePoints${matchId}`).value = source.TEAM2.losePoints;
-      document.getElementById(`team2Rank${matchId}`).value = source.TEAM2.rank;
-      document.getElementById(`team2CurrentPoints${matchId}`).value = source.TEAM2.currentPoints;
+      // Обновляем поля: если данные из UPCOM пусты, подставляем значения из FINISHED
+      document.getElementById(`team1WinPoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM1.winPoints, data.FINISHED.TEAM1.winPoints);
+      document.getElementById(`team1LosePoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM1.losePoints, data.FINISHED.TEAM1.losePoints);
+      document.getElementById(`team1Rank${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM1.rank, data.FINISHED.TEAM1.rank);
+      document.getElementById(`team1CurrentPoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM1.currentPoints, data.FINISHED.TEAM1.currentPoints_win);
+  
+      document.getElementById(`team2WinPoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM2.winPoints, data.FINISHED.TEAM2.winPoints);
+      document.getElementById(`team2LosePoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM2.losePoints, data.FINISHED.TEAM2.losePoints);
+      document.getElementById(`team2Rank${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM2.rank, data.FINISHED.TEAM2.rank);
+      document.getElementById(`team2CurrentPoints${matchId}`).value =
+        chooseValue(data.UPCOM.TEAM2.currentPoints, data.FINISHED.TEAM2.currentPoints_win);
     } catch (error) {
       console.error("Ошибка загрузки VRS для матча", matchId, error);
     }
   }
+  
   
   
   
