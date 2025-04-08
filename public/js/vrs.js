@@ -1,10 +1,9 @@
 // public/js/vrs.js
 
 export function initVRS() {
-    // Инициализация блоков VRS для каждого матча
-    for (let i = 1; i <= 4; i++) {
-      const vrsBlock = document.getElementById("vrsBlock" + i);
-      if (vrsBlock) {
+  for (let i = 1; i <= 4; i++) {
+    const vrsBlock = document.getElementById("vrsBlock" + i);
+    if (vrsBlock) {
         vrsBlock.innerHTML = `
           <h3>VRS</h3>
           <table class="vrs-table">
@@ -35,6 +34,7 @@ export function initVRS() {
             </tbody>
           </table>
         `;
+        console.log(`vrsBlock${i} создан, team1WinPoints${i}:`, document.getElementById(`team1WinPoints${i}`));
       }
     }
   }
@@ -50,6 +50,11 @@ export function initVRS() {
       const res = await fetch(`/api/vrs/${matchId}`);
       if (!res.ok) return;
       const data = await res.json();
+      console.log("Загружены данные VRS для матча", matchId, data);
+      const inp = document.getElementById(`team1WinPoints${matchId}`);
+      if (!inp) {
+        console.error(`Элемент team1WinPoints${matchId} не найден в DOM!`);
+      }
       document.getElementById(`team1WinPoints${matchId}`).value = data.TEAM1.winPoints;
       document.getElementById(`team1LosePoints${matchId}`).value = data.TEAM1.losePoints;
       document.getElementById(`team1Rank${matchId}`).value = data.TEAM1.rank;
@@ -65,7 +70,7 @@ export function initVRS() {
   }
   
   export function gatherVRSData() {
-    const vrsData = [{}];
+    const vrsData = {};
     for (let i = 1; i <= 4; i++) {
       vrsData[i] = {
         TEAM1: {
