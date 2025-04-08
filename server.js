@@ -328,10 +328,14 @@ function getVRSResponse(matchId) {
   };
 }
 
-app.get("/api/vrs1", (req, res) => { res.json([getVRSResponse(1)]); });
-app.get("/api/vrs2", (req, res) => { res.json([getVRSResponse(2)]); });
-app.get("/api/vrs3", (req, res) => { res.json([getVRSResponse(3)]); });
-app.get("/api/vrs4", (req, res) => { res.json([getVRSResponse(4)]); });
+app.get("/api/vrs/:id", (req, res) => {
+  const matchId = parseInt(req.params.id, 10);
+  if (isNaN(matchId) || matchId < 1 || matchId > 4) {
+    return res.status(404).json({ error: "Некорректный номер матча" });
+  }
+  res.json([getVRSResponse(matchId)]);
+});
+
 
 app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
