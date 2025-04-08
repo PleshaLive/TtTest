@@ -41,17 +41,21 @@ export function initVRS() {
 
 export async function loadAllVRS() {
   for (let i = 1; i <= 4; i++) {
+    console.log(`Loading VRS for match ${i}`);
     await loadVRSData(i);
   }
 }
 
 async function loadVRSData(matchId) {
   try {
-    // Запрашиваем данные по URL, например, /api/vrs/1, /api/vrs/2, ...
+    console.log(`Requesting /api/vrs/${matchId}`);
     const res = await fetch(`/api/vrs/${matchId}`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn(`Response not OK for match ${matchId}:`, res.status);
+      return;
+    }
     let data = await res.json();
-    // Если сервер возвращает данные в виде массива, берём первый элемент
+    console.log(`Data received for match ${matchId}:`, data);
     if (Array.isArray(data)) {
       data = data[0];
     }
@@ -75,16 +79,16 @@ export function gatherVRSData() {
   for (let i = 1; i <= 4; i++) {
     vrsData[i] = {
       TEAM1: {
-        winPoints: parseInt(document.getElementById(`team1WinPoints${i}`).value, 10),
-        losePoints: parseInt(document.getElementById(`team1LosePoints${i}`).value, 10),
-        rank: parseInt(document.getElementById(`team1Rank${i}`).value, 10),
-        currentPoints: parseInt(document.getElementById(`team1CurrentPoints${i}`).value, 10)
+        winPoints: parseInt(document.getElementById(`team1WinPoints${i}`).value, 10) || 0,
+        losePoints: parseInt(document.getElementById(`team1LosePoints${i}`).value, 10) || 0,
+        rank: parseInt(document.getElementById(`team1Rank${i}`).value, 10) || 0,
+        currentPoints: parseInt(document.getElementById(`team1CurrentPoints${i}`).value, 10) || 0
       },
       TEAM2: {
-        winPoints: parseInt(document.getElementById(`team2WinPoints${i}`).value, 10),
-        losePoints: parseInt(document.getElementById(`team2LosePoints${i}`).value, 10),
-        rank: parseInt(document.getElementById(`team2Rank${i}`).value, 10),
-        currentPoints: parseInt(document.getElementById(`team2CurrentPoints${i}`).value, 10)
+        winPoints: parseInt(document.getElementById(`team2WinPoints${i}`).value, 10) || 0,
+        losePoints: parseInt(document.getElementById(`team2LosePoints${i}`).value, 10) || 0,
+        rank: parseInt(document.getElementById(`team2Rank${i}`).value, 10) || 0,
+        currentPoints: parseInt(document.getElementById(`team2CurrentPoints${i}`).value, 10) || 0
       }
     };
   }
