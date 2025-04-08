@@ -333,7 +333,7 @@ app.get("/api/vrs/:id", (req, res) => {
   if (isNaN(matchId) || matchId < 1 || matchId > 4) {
     return res.status(404).json({ error: "Некорректный номер матча" });
   }
-  res.json([getVRSResponse(matchId)]);
+  res.json(getVRSResponse(matchId));
 });
 
 
