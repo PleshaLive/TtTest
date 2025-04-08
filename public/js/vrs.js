@@ -45,29 +45,30 @@ export function initVRS() {
     }
   }
   
+  
   async function loadVRSData(matchId) {
     try {
       const res = await fetch(`/api/vrs/${matchId}`);
       if (!res.ok) return;
       const data = await res.json();
       console.log("Загружены данные VRS для матча", matchId, data);
-      const inp = document.getElementById(`team1WinPoints${matchId}`);
-      if (!inp) {
-        console.error(`Элемент team1WinPoints${matchId} не найден в DOM!`);
-      }
-      document.getElementById(`team1WinPoints${matchId}`).value = data.TEAM1.winPoints;
-      document.getElementById(`team1LosePoints${matchId}`).value = data.TEAM1.losePoints;
-      document.getElementById(`team1Rank${matchId}`).value = data.TEAM1.rank;
-      document.getElementById(`team1CurrentPoints${matchId}`).value = data.TEAM1.currentPoints;
   
-      document.getElementById(`team2WinPoints${matchId}`).value = data.TEAM2.winPoints;
-      document.getElementById(`team2LosePoints${matchId}`).value = data.TEAM2.losePoints;
-      document.getElementById(`team2Rank${matchId}`).value = data.TEAM2.rank;
-      document.getElementById(`team2CurrentPoints${matchId}`).value = data.TEAM2.currentPoints;
+      // Обращаемся к данным из блока UPCOM
+      document.getElementById(`team1WinPoints${matchId}`).value = data.UPCOM.TEAM1.winPoints;
+      document.getElementById(`team1LosePoints${matchId}`).value = data.UPCOM.TEAM1.losePoints;
+      document.getElementById(`team1Rank${matchId}`).value = data.UPCOM.TEAM1.rank;
+      document.getElementById(`team1CurrentPoints${matchId}`).value = data.UPCOM.TEAM1.currentPoints;
+  
+      document.getElementById(`team2WinPoints${matchId}`).value = data.UPCOM.TEAM2.winPoints;
+      document.getElementById(`team2LosePoints${matchId}`).value = data.UPCOM.TEAM2.losePoints;
+      document.getElementById(`team2Rank${matchId}`).value = data.UPCOM.TEAM2.rank;
+      document.getElementById(`team2CurrentPoints${matchId}`).value = data.UPCOM.TEAM2.currentPoints;
     } catch (error) {
       console.error("Ошибка загрузки VRS для матча", matchId, error);
     }
   }
+  
+  
   
   export function gatherVRSData() {
     const vrsData = {};
