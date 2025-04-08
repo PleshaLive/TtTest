@@ -49,6 +49,24 @@ async function loadMatchesFromServer() {
   }
 }
 
+async function updateAggregatedVRS() {
+  try {
+    const res = await fetch("/api/vrs-all");
+    if (!res.ok) return;
+    const allVRS = await res.json();
+    console.log("Агрегированные VRS:", allVRS);
+
+    // Предположим, что у вас есть блок <div id="aggregatedVRS"></div>:
+    const aggregatedBlock = document.getElementById("aggregatedVRS");
+    if (aggregatedBlock) {
+      aggregatedBlock.textContent = JSON.stringify(allVRS, null, 2);
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки агрегированных VRS:", error);
+  }
+}
+
+
 // Функция для получения JSON-данных и вывода их на страницу
 async function updateJsonOutput() {
   try {
