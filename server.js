@@ -4,6 +4,8 @@ const path = require("path");
 const fs = require("fs");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const http = require("http");
+const { Server: SocketIOServer } = require("socket.io");
 
 // Создаем приложение Express
 const app = express();
@@ -78,7 +80,7 @@ app.use(express.static(path.join(__dirname, "public")));
    Работа с данными: matches, mapVeto, VRS
    ==================================== */
 
-// Дефолтные пути для логотипов (если значение отсутствует или "none.png")
+// Дефолтные пути для логотипов (оставляем без изменений)
 const defaultTeam1Logo = "C:\\projects\\vMix_score\\public\\logos\\default1.png";
 const defaultTeam2Logo = "C:\\projects\\vMix_score\\public\\logos\\default2.png";
 
@@ -203,7 +205,7 @@ app.post("/api/matchdata", (req, res) => {
   
   saveDataToFile();
   
-  // Вместо перезагрузки отправляем событие jsonUpdate с актуальными данными
+  // Эмитим событие "jsonUpdate" с актуальными данными
   io.emit("jsonUpdate", savedMatches);
   
   res.json(savedMatches);
@@ -216,7 +218,8 @@ app.post("/api/mapveto", (req, res) => {
   savedMapVeto = req.body;
   console.log("Получены данные mapveto:", savedMapVeto);
   saveDataToFile();
-  setTimeout(() => io.emit("reload"), 500);
+  // При необходимости можно эмитить отдельное событие для mapVeto
+  io.emit("mapVetoUpdate", savedMapVeto);
   res.json(savedMapVeto);
 });
 
@@ -235,6 +238,7 @@ function getVRSResponse(matchId) {
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
   };
   
+  // Пути к файлам остаются такими, как были
   let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
   let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
   
@@ -333,7 +337,8 @@ app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
   console.log("Получены данные VRS:", savedVRS);
   saveDataToFile();
-  setTimeout(() => io.emit("reload"), 500);
+  // Эмитим событие "vrsUpdate", если нужно обновление VRS у клиентов
+  io.emit("vrsUpdate", savedVRS);
   res.json(savedVRS);
 });
 
@@ -358,19 +363,14 @@ app.get("/api/teams", (req, res) => {
 /* ====================================
    Socket.io и запуск сервера
    ==================================== */
-const http = require("http");
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
+const io = new SocketIOServer(server);
 
-// Если требуется, можно добавить наблюдение за index.html для разработки (закомментируйте для продакшена)
-// const indexPath = path.join(__dirname, "public", "index.html");
-// fs.watch(indexPath, (eventType, filename) => {
-//   if (filename) {
-//     console.log(`index.html изменён (${eventType}). Отправляю сообщение обновления.`);
-//     io.emit("reload");
-//   }
-// });
+io.on("connection", (socket) => {
+  console.log("Клиент подключён");
+  // Отправляем текущие данные матчей сразу при подключении
+  socket.emit("jsonUpdate", savedMatches);
+});
 
 // Запускаем сервер, привязываясь к "0.0.0.0" (требуется для облачных платформ)
 server.listen(port, "0.0.0.0", () => {
