@@ -1,6 +1,5 @@
 // public/js/main.js
-
-import { initMatches, gatherMatchesData, updateWinnerButtonLabels, refreshWinnerHighlight, updateStatusColor } from "./matches.js";
+import { initMatches, gatherMatchesData } from "./matches.js";
 import { initMapVeto, gatherMapVetoData } from "./mapVeto.js";
 import { initVRS, loadAllVRS, gatherVRSData } from "./vrs.js";
 import { saveData } from "./api.js";
@@ -10,13 +9,13 @@ initMatches();
 initMapVeto();
 initVRS();
 
-// Функция загрузки данных с сервера и обновления UI
+// Функция для загрузки сохранённых данных с сервера и обновления UI
 async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
     const matches = await response.json();
-
-    // Обновляем поля для каждого матча
+    
+    // Обновляем поля для каждого матча (matchdata — массив объектов)
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
       
@@ -26,7 +25,7 @@ async function loadMatchesFromServer() {
         timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
       }
       
-      // Обновляем статус матча и его окраску
+      // Обновляем статус матча
       const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
       if (statusSelect) {
         if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -36,7 +35,8 @@ async function loadMatchesFromServer() {
         } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
           statusSelect.value = "UPCOM";
         }
-        updateStatusColor(statusSelect);  // обновляем цвет селекта
+        // Если у вас функция для обновления цвета статуса, вызовите её тут,
+        // например: updateStatusColor(statusSelect);
       }
       
       // Обновляем селекты команд
@@ -49,24 +49,23 @@ async function loadMatchesFromServer() {
         team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
       }
       
-      // Обновляем лейблы кнопок победителя и подсветку
-      updateWinnerButtonLabels(matchIndex);
-      refreshWinnerHighlight(matchIndex);
-
-      // При необходимости можно обновлять и другие динамические элементы (например, превью логотипов)
+      // Если у вас раньше работали функции обновления кнопок победителя,
+      // не забудьте их вызвать, например:
+      // updateWinnerButtonLabels(matchIndex);
+      // refreshWinnerHighlight(matchIndex);
     });
   } catch (error) {
     console.error("Ошибка загрузки matchdata:", error);
   }
 }
 
-// Вызываем загрузку данных при загрузке страницы
+// При загрузке страницы получаем сохранённые данные и обновляем VRS
 window.addEventListener("DOMContentLoaded", () => {
   loadMatchesFromServer();
   loadAllVRS();
 });
 
-// Функция автосохранения с дебаунсингом (500 мс)
+// Функция автосохранения (debounce 500 мс)
 let autoSaveTimeout;
 function autoSave() {
   if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
@@ -74,16 +73,16 @@ function autoSave() {
     try {
       const matchesData = gatherMatchesData();
       const savedMatches = await saveData("/api/matchdata", matchesData);
-
+      
       const mapVetoData = gatherMapVetoData();
       const savedVeto = await saveData("/api/mapveto", mapVetoData);
-
+      
       const vrsData = gatherVRSData();
       const savedVRS = await saveData("/api/vrs", vrsData);
-
-      // Если необходимо, перезагружаем VRS данные
+      
+      // Обновляем VRS данные после автосохранения
       loadAllVRS();
-
+      
       console.log("Автосохранение прошло успешно", { savedMatches, savedVeto, savedVRS });
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
@@ -96,7 +95,7 @@ document.querySelectorAll("input, select").forEach(element => {
   element.addEventListener("change", autoSave);
 });
 
-// Подключаем socket.io — вместо полной перезагрузки, мы обновляем данные
+// Подключаем socket.io: при получении события "reload" перезагружаем данные,
 const socket = io();
 socket.on("reload", async () => {
   console.log("Получено событие обновления, загружаю свежие данные...");
