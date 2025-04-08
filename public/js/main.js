@@ -1,13 +1,5 @@
 // public/js/main.js
-
-import { 
-  initMatches, 
-  gatherMatchesData, 
-  updateWinnerButtonLabels, 
-  refreshWinnerHighlight,
-  updateStatusColor,
-  populateTeamSelects 
-} from "./matches.js";
+import { initMatches, gatherMatchesData } from "./matches.js";
 import { initMapVeto, gatherMapVetoData } from "./mapVeto.js";
 import { initVRS, loadAllVRS, gatherVRSData } from "./vrs.js";
 import { saveData } from "./api.js";
@@ -17,46 +9,25 @@ initMatches();
 initMapVeto();
 initVRS();
 
-// Функция загрузки списка команд (из data.json через API)
-function loadTeams() {
-  fetch("/api/teams")
-    .then((res) => res.json())
-    .then((data) => {
-      // Предполагается, что API возвращает либо объект { teams: [...] }, либо просто массив.
-      const teamsList = data.teams || data;
-      populateTeamSelects(teamsList);
-    })
-    .catch((err) => {
-      console.error("Ошибка загрузки списка команд:", err);
-    });
-}
-
-// Функция для проверки, редактирует ли пользователь данные
-function isUserEditing() {
-  const active = document.activeElement;
-  if (!active) return false;
-  const tag = active.tagName.toUpperCase();
-  return (tag === "INPUT" || tag === "SELECT") && Boolean(active.closest(".match-column"));
-}
-
-// Функция загрузки данных матчей с сервера и обновления UI
+// Функция для загрузки сохранённых данных с сервера и обновления UI
 async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
     const matches = await response.json();
     
+    // Обновляем поля для каждого матча (предполагается, что у вас matchdata — массив объектов)
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
       
-      // Обновляем поле времени, если элемент не в фокусе
+      // Обновляем поле времени
       const timeInput = document.getElementById(`timeInput${matchIndex}`);
-      if (timeInput && !timeInput.matches(":focus")) {
+      if (timeInput) {
         timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
       }
       
-      // Обновляем статус матча и применяем стиль, если элемент не в фокусе
+      // Обновляем статус матча
       const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
-      if (statusSelect && !statusSelect.matches(":focus")) {
+      if (statusSelect) {
         if (match.FINISHED_MATCH_STATUS === "FINISHED") {
           statusSelect.value = "FINISHED";
         } else if (match.LIVE_MATCH_STATUS === "LIVE") {
@@ -64,36 +35,32 @@ async function loadMatchesFromServer() {
         } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
           statusSelect.value = "UPCOM";
         }
-        updateStatusColor(statusSelect);
       }
       
-      // Обновляем селекты команд, если они не в фокусе
+      // Обновляем селекты команд
       const team1Select = document.getElementById(`team1Select${matchIndex}`);
-      if (team1Select && !team1Select.matches(":focus")) {
+      if (team1Select) {
         team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
       }
       const team2Select = document.getElementById(`team2Select${matchIndex}`);
-      if (team2Select && !team2Select.matches(":focus")) {
+      if (team2Select) {
         team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
       }
       
-      // Обновляем визуальные элементы победителя
-      updateWinnerButtonLabels(matchIndex);
-      refreshWinnerHighlight(matchIndex);
+      // Если у вас есть поля для карт, их тоже можно обновлять аналогичным образом
     });
   } catch (error) {
     console.error("Ошибка загрузки matchdata:", error);
   }
 }
 
-// При загрузке страницы загружаем список команд и данные матчей и VRS
+// Вызываем загрузку данных при загрузке страницы
 window.addEventListener("DOMContentLoaded", () => {
-  loadTeams();
   loadMatchesFromServer();
-  loadAllVRS();
+  loadAllVRS(); // Обновление VRS, если нужно
 });
 
-// Функция автосохранения (debounce 500 мс)
+// Функция автосохранения с использованием дебаунсинга (задержка 500 мс)
 let autoSaveTimeout;
 function autoSave() {
   if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
@@ -102,14 +69,20 @@ function autoSave() {
       const matchesData = gatherMatchesData();
       const savedMatches = await saveData("/api/matchdata", matchesData);
 
-      const mapVetoData = gatherMapVetoData();
+      const mapVetoData = gatherMapVetoData(matchesData);
       const savedVeto = await saveData("/api/mapveto", mapVetoData);
 
       const vrsData = gatherVRSData();
       const savedVRS = await saveData("/api/vrs", vrsData);
 
+      // Обновляем VRS данные после сохранения
       loadAllVRS();
-      console.log("Автосохранение прошло успешно", { savedMatches, savedVeto, savedVRS });
+
+      console.log("Автосохранение прошло успешно", {
+        savedMatches,
+        savedVeto,
+        savedVRS
+      });
     } catch (err) {
       console.error("Ошибка автосохранения:", err);
     }
@@ -119,23 +92,4 @@ function autoSave() {
 // Привязываем автосохранение ко всем input и select элементам
 document.querySelectorAll("input, select").forEach(element => {
   element.addEventListener("change", autoSave);
-});
-
-// Socket.io: обновляем UI, если пользователь не редактирует
-const socket = io();
-socket.on("reload", async () => {
-  console.log("Получено событие обновления");
-  if (!isUserEditing()) {
-    // Задержка 1500 мс для гарантии сохранения данных
-    setTimeout(async () => {
-      await loadMatchesFromServer();
-    }, 1500);
-  } else {
-    console.log("Пользователь сейчас редактирует форму — обновление отложено");
-    setTimeout(async () => {
-      if (!isUserEditing()) {
-        await loadMatchesFromServer();
-      }
-    }, 1500);
-  }
 });
