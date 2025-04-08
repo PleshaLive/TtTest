@@ -247,7 +247,6 @@ function getVRSResponse(matchId) {
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints_win: "", currentPoints_lose: "", logo: team2Logo }
   };
   
-  // Пути к файлам остаются такими, как были
   let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
   let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
   
@@ -260,7 +259,7 @@ function getVRSResponse(matchId) {
         FINISHED: {
           TEAM1: {
             winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-            losePoints: "",
+            losePoints: "",  // здесь оставляем пустым, если матч завершён
             rank: vrsData.TEAM1.rank,
             currentPoints_win: vrsData.TEAM1.currentPoints,
             currentPoints_lose: "",
@@ -268,7 +267,7 @@ function getVRSResponse(matchId) {
           },
           TEAM2: {
             winPoints: "",
-            losePoints: vrsData.TEAM2.losePoints,
+            losePoints: -Math.abs(vrsData.TEAM2.losePoints),
             rank: vrsData.TEAM2.rank,
             currentPoints_win: "",
             currentPoints_lose: vrsData.TEAM2.currentPoints,
@@ -286,7 +285,7 @@ function getVRSResponse(matchId) {
         FINISHED: {
           TEAM1: {
             winPoints: "",
-            losePoints: vrsData.TEAM1.losePoints,
+            losePoints: -Math.abs(vrsData.TEAM1.losePoints),
             rank: vrsData.TEAM1.rank,
             currentPoints_win: "",
             currentPoints_lose: vrsData.TEAM1.currentPoints,
@@ -318,14 +317,14 @@ function getVRSResponse(matchId) {
     UPCOM: {
       TEAM1: {
         winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-        losePoints: vrsData.TEAM1.losePoints,
+        losePoints: -Math.abs(vrsData.TEAM1.losePoints), // гарантируем отрицательное значение
         rank: vrsData.TEAM1.rank,
         currentPoints: vrsData.TEAM1.currentPoints,
         logo: team1Logo
       },
       TEAM2: {
         winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
-        losePoints: vrsData.TEAM2.losePoints,
+        losePoints: -Math.abs(vrsData.TEAM2.losePoints),
         rank: vrsData.TEAM2.rank,
         currentPoints: vrsData.TEAM2.currentPoints,
         logo: team2Logo
@@ -336,6 +335,7 @@ function getVRSResponse(matchId) {
     WIN_BG_TEAM_2: "C:\\projects\\NewTimer\\files\\idle.png"
   };
 }
+
 
 app.get("/api/vrs/:id", (req, res) => {
   const matchId = parseInt(req.params.id, 10);
