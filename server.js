@@ -5,7 +5,7 @@ const path = require("path");
 
 const app = express();
 // Используем переменную окружения PORT, либо 3000 (Railway обычно задаёт свой порт)
-const port = Number(process.env.PORT) || 3000;
+const port =  3000;
 
 // Роут для Health Check — Railway сможет получить 200 OK
 app.get("/health", (req, res) => {
