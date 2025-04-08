@@ -5,11 +5,21 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-// Преобразуем переменную окружения PORT в число и, если не определена, используем 3000
 const port = Number(process.env.PORT) || 3000;
 
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+
+// Логирование входящих запросов для отладки
+app.use((req, res, next) => {
+  console.log("[REQ]", req.method, req.path);
+  next();
+});
+
+// Health-check: Railway может проверять этот эндпоинт
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
 
 // Middleware: парсеры и сессии
 app.use(express.urlencoded({ extended: false }));
@@ -21,7 +31,7 @@ app.use(session({
   cookie: { secure: false } // для HTTPS установить true
 }));
 
-// Страница логина — файлы login.html и login.css должны находиться в папке public
+// Страница логина (файлы login.html и login.css должны находиться в public)
 app.get("/login", (req, res) => {
   if (req.session.authenticated) return res.redirect("/");
   res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -36,13 +46,23 @@ app.post("/login", (req, res) => {
   res.redirect("/login?error=1");
 });
 
-// Middleware для проверки авторизации — если не залогинен, редирект на /login
+// Роут для корня: если пользователь не залогинен, перенаправляет на /login,
+// иначе отдает index.html
+app.get("/", (req, res) => {
+  if (!req.session.authenticated) {
+    return res.redirect("/login");
+  }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Middleware авторизации: все запросы, не относящиеся к API или логину, редиректят на /login
 app.use((req, res, next) => {
   if (
     req.path.startsWith("/api/") ||
     req.session.authenticated ||
     req.path === "/login" ||
-    req.path === "/login.css"
+    req.path === "/login.css" ||
+    req.path === "/health"
   ) {
     return next();
   }
@@ -78,10 +98,10 @@ let savedVRS = {
   }
 };
 
-// Путь к файлу базы данных (db.json)
+// Путь к файлу базы данных
 const dbFilePath = path.join(__dirname, "db.json");
 
-// Функция для загрузки данных из файла (если файла нет — создаётся новый)
+// Функция загрузки данных из db.json (если файла нет, создаётся новый)
 function loadDataFromFile() {
   if (!fs.existsSync(dbFilePath)) {
     fs.writeFileSync(dbFilePath, JSON.stringify({
@@ -98,7 +118,7 @@ function loadDataFromFile() {
 }
 loadDataFromFile();
 
-// Функция сохранения данных в файл
+// Функция сохранения данных в db.json
 function saveDataToFile() {
   const jsonData = {
     matches: savedMatches,
@@ -155,7 +175,7 @@ app.post("/api/matchdata", (req, res) => {
   savedMatches = Array.isArray(req.body) ? req.body : [req.body];
   console.log("Получены matchdata:", savedMatches);
   
-  // Если матч завершён, обновляем VRS
+  // Если матч завершён, обновляем VRS для него
   savedMatches.forEach((match, idx) => {
     const matchId = idx + 1;
     if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -174,7 +194,6 @@ app.post("/api/matchdata", (req, res) => {
   });
   
   saveDataToFile();
-  // Уведомляем всех клиентов через socket.io с небольшой задержкой
   setTimeout(() => io.emit("reload"), 500);
   res.json(savedMatches);
 });
@@ -194,7 +213,7 @@ app.post("/api/mapveto", (req, res) => {
 });
 
 // -------------
-// Эндпоинты для VRS
+// Эндпоинты для VRS для каждого матча
 // -------------
 function getVRSResponse(matchId) {
   const vrsData = savedVRS[matchId] || {
@@ -320,9 +339,9 @@ app.post("/api/vrs", (req, res) => {
   res.json(savedVRS);
 });
 
-// ---------------------------
+// -------------
 // Эндпоинт для списка команд (из файла data.json)
-// ---------------------------
+// -------------
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
   fs.readFile(teamsDataFile, "utf8", (err, data) => {
@@ -346,7 +365,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// Если требуется, можно добавить наблюдение за index.html (для разработки; в продакшене можно удалить)
+// Если требуется, можно добавить наблюдение за index.html (для разработки)
 // const indexPath = path.join(__dirname, "public", "index.html");
 // fs.watch(indexPath, (eventType, filename) => {
 //   if (filename) {
@@ -355,7 +374,7 @@ const io = new Server(server);
 //   }
 // });
 
-// Запускаем сервер; обязательно слушаем на процессе, заданном Railway, и привязываемся к 0.0.0.0
+// Запускаем сервер, привязываясь к 0.0.0.0 (что требуется на многих облачных платформах)
 server.listen(port, "0.0.0.0", () => {
   console.log(`Сервер запущен на http://0.0.0.0:${port}`);
 });
