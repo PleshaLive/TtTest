@@ -234,60 +234,100 @@ app.post("/api/mapveto", (req, res) => {
 
 // --- API для VRS ---
 function getVRSResponse(matchId) {
+  // Если данных по VRS нет, создаём объект с пустыми строками
   const vrsData = savedVRS[matchId] || {
     TEAM1: { winPoints: "", losePoints: "", rank: "", currentPoints: "" },
     TEAM2: { winPoints: "", losePoints: "", rank: "", currentPoints: "" }
   };
+  
   const match = savedMatches[matchId - 1] || {};
   const team1Logo = getLogo(match, "TEAM1");
   const team2Logo = getLogo(match, "TEAM2");
 
-  // Определяем стандартные значения для отображения (все значения из savedVRS)
-  const upcomData = {
-    TEAM1: {
-      winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-      losePoints: -Math.abs(vrsData.TEAM1.losePoints),
-      rank: vrsData.TEAM1.rank,
-      currentPoints: vrsData.TEAM1.currentPoints,
-      logo: team1Logo
-    },
-    TEAM2: {
-      winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
-      losePoints: -Math.abs(vrsData.TEAM2.losePoints),
-      rank: vrsData.TEAM2.rank,
-      currentPoints: vrsData.TEAM2.currentPoints,
-      logo: team2Logo
-    }
-  };
-
-  // Если матч завершён, возвращаем данные и для UPCOM и для FINISHED одинаково.
-  // Если потребуется можно модифицировать FINISHED отдельно.
+  // Если матч завершён – формируем ответ для FINISHED
   if (match.FINISHED_MATCH_STATUS === "FINISHED") {
     let winBgTeam1 = "C:\\projects\\NewTimer\\files\\idle.png";
     let winBgTeam2 = "C:\\projects\\NewTimer\\files\\idle.png";
-
+    
+    // Определяем, кто победитель, чтобы расставить фоновые картинки
     if (match.TEAMWINNER === match.FINISHED_TEAM1) {
-      winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
-      winBgTeam2 = "C:\\projects\\NewTimer\\files\\lose.png";
-    } else if (match.TEAMWINNER === match.FINISHED_TEAM2) {
+      // Например, при победе TEAM1:
       winBgTeam1 = "C:\\projects\\NewTimer\\files\\lose.png";
       winBgTeam2 = "C:\\projects\\NewTimer\\files\\win.png";
+    } else if (match.TEAMWINNER === match.FINISHED_TEAM2) {
+      winBgTeam1 = "C:\\projects\\NewTimer\\files\\win.png";
+      winBgTeam2 = "C:\\projects\\NewTimer\\files\\lose.png";
     }
-    return {
-      UPCOM: upcomData,
-      FINISHED: upcomData, // здесь возвращаем те же данные, можно их индивидуально форматировать
-      WIN_BG_TEAM_1: winBgTeam1,
-      WIN_BG_TEAM_2: winBgTeam2
-    };
+    return [
+      {
+        UPCOM: {
+          TEAM1: {
+            winPoints: "",
+            losePoints: "",
+            rank: "",
+            currentPoints_win: "",
+            currentPoints_lose: "",
+            logo: team1Logo
+          },
+          TEAM2: {
+            winPoints: "",
+            losePoints: "",
+            rank: "",
+            currentPoints_win: "",
+            currentPoints_lose: "",
+            logo: team2Logo
+          }
+        },
+        FINISHED: {
+          TEAM1: {
+            // Здесь для TEAM1 в FINISHED оставляем losePoints, rank, currentPoints в нужном виде
+            winPoints: "",
+            losePoints: -Math.abs(vrsData.TEAM1.losePoints),
+            rank: vrsData.TEAM1.rank,
+            currentPoints_win: "",
+            currentPoints_lose: vrsData.TEAM1.currentPoints,
+            logo: team1Logo
+          },
+          TEAM2: {
+            // Для TEAM2 в FINISHED – winPoints, rank, currentPoints, соответственно
+            winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
+            losePoints: "",
+            rank: vrsData.TEAM2.rank,
+            currentPoints_win: vrsData.TEAM2.currentPoints,
+            currentPoints_lose: "",
+            logo: team2Logo
+          }
+        },
+        WIN_BG_TEAM_1: winBgTeam1,
+        WIN_BG_TEAM_2: winBgTeam2
+      }
+    ];
   }
   
-  // Если матч не завершён, просто возвращаем данные в блоке UPCOM
-  return {
-    UPCOM: upcomData,
-    FINISHED: {},
-    WIN_BG_TEAM_1: "C:\\projects\\NewTimer\\files\\idle.png",
-    WIN_BG_TEAM_2: "C:\\projects\\NewTimer\\files\\idle.png"
-  };
+  // Для матчей, которые не FINISHED, возвращаем UPCOM-данные
+  return [
+    {
+      UPCOM: {
+        TEAM1: {
+          winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
+          losePoints: -Math.abs(vrsData.TEAM1.losePoints),
+          rank: vrsData.TEAM1.rank,
+          currentPoints: vrsData.TEAM1.currentPoints,
+          logo: team1Logo
+        },
+        TEAM2: {
+          winPoints: formatWinPoints(vrsData.TEAM2.winPoints),
+          losePoints: -Math.abs(vrsData.TEAM2.losePoints),
+          rank: vrsData.TEAM2.rank,
+          currentPoints: vrsData.TEAM2.currentPoints,
+          logo: team2Logo
+        }
+      },
+      FINISHED: {},
+      WIN_BG_TEAM_1: "C:\\projects\\NewTimer\\files\\idle.png",
+      WIN_BG_TEAM_2: "C:\\projects\\NewTimer\\files\\idle.png"
+    }
+  ];
 }
 
 
