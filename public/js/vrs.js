@@ -53,7 +53,9 @@ export function initVRS() {
       const dataArray = await res.json();
       // Если ответ всегда массив с одним элементом:
       const data = dataArray[0]; 
+      const block = (matchStatus === "FINISHED") ? data.FINISHED : data.UPCOM;
   
+      document.getElementById(`team1WinPoints${matchId}`).value = block.TEAM1.winPoints;
       // Обращаемся к данным из блока UPCOM
       document.getElementById(`team1WinPoints${matchId}`).value = data.UPCOM.TEAM1.winPoints;
       document.getElementById(`team1LosePoints${matchId}`).value = data.UPCOM.TEAM1.losePoints;
