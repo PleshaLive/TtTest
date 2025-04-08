@@ -8,13 +8,17 @@
 <body>
   <div class="container">
     <h1>Интерфейс матчей</h1>
+    <!-- Подключаем socket.io -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
-      // Если получаем событие jsonUpdate, обновляем блок JSON
+      // При получении события jsonUpdate обновляем блок JSON
       socket.on("jsonUpdate", data => {
         console.log("Получено обновление JSON:", data);
-        document.getElementById("jsonOutput").textContent = JSON.stringify(data, null, 2);
+        const jsonOutput = document.getElementById("jsonOutput");
+        if (jsonOutput) {
+          jsonOutput.textContent = JSON.stringify(data, null, 2);
+        }
       });
     </script>
 
@@ -46,7 +50,6 @@
           </select>
           <div class="maps">
             <div class="map-row">
-
               <select class="map-name-select">
                 <option value="inferno" selected>inferno</option>
                 <option value="dust2">dust2</option>
@@ -174,7 +177,6 @@
             <option value="LIVE">LIVE</option>
             <option value="FINISHED" selected>FINISHED</option>
           </select>
-
           <input type="text" class="time-input" id="timeInput3" value="13:00" />
           <label>Team 1:</label>
           <select class="team-select" id="team1Select3">
@@ -188,7 +190,6 @@
           </select>
           <div class="maps">
             <div class="map-row">
-
               <select class="map-name-select">
                 <option value="mirage" selected>mirage</option>
                 <option value="inferno">inferno</option>
@@ -259,7 +260,6 @@
           </select>
           <div class="maps">
             <div class="map-row">
-
               <select class="map-name-select">
                 <option value="ancient" selected>ancient</option>
                 <option value="inferno">inferno</option>
@@ -308,10 +308,26 @@
 
       <!-- 2) Вторая строка: VS / VS / NEXT -->
       <div class="next-row">
-        <div class="next-column"><div class="vs">VS</div><div class="vs">VS</div><div class="next">NEXT</div></div>
-        <div class="next-column"><div class="vs">VS</div><div class="vs">VS</div><div class="next">NEXT</div></div>
-        <div class="next-column"><div class="vs">VS</div><div class="vs">VS</div><div class="next">NEXT</div></div>
-        <div class="next-column"><div class="vs">VS</div><div class="vs">VS</div><div class="next">NEXT</div></div>
+        <div class="next-column">
+          <div class="vs">VS</div>
+          <div class="vs">VS</div>
+          <div class="next">NEXT</div>
+        </div>
+        <div class="next-column">
+          <div class="vs">VS</div>
+          <div class="vs">VS</div>
+          <div class="next">NEXT</div>
+        </div>
+        <div class="next-column">
+          <div class="vs">VS</div>
+          <div class="vs">VS</div>
+          <div class="next">NEXT</div>
+        </div>
+        <div class="next-column">
+          <div class="vs">VS</div>
+          <div class="vs">VS</div>
+          <div class="next">NEXT</div>
+        </div>
       </div>
 
       <!-- 3) Третья строка: Map Veto с селектами -->
@@ -383,11 +399,12 @@
       </div>
     </div>
 
+    <!-- Блок для вывода JSON с сервера -->
     <div class="json-output" id="jsonOutput"></div>
-
     
   </div>
 
+  <!-- Подключаем основные модули -->
   <script type="module" src="js/main.js"></script>
   <script type="module" src="js/vrs.js"></script>
 </body>
