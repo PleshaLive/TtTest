@@ -13,7 +13,7 @@
       "UPCOM_MAP2_SCORE": "",
       "UPCOM_MAP3": "mirage",
       "UPCOM_MAP3_SCORE": "MATCH 1",
-      "UPCOM_Cest": "",
+      "UPCOM_Cest": "cest",
       "UPCOM_RectangleUP": "C:\\projects\\NewTimer\\files\\rectUp.png",
       "UPCOM_RectangleLOW": "C:\\projects\\NewTimer\\files\\rectLow.png",
       "UPCOM_vs_mini": "vs",
@@ -244,7 +244,7 @@
       "UPCOM_MAP2_SCORE": "",
       "UPCOM_MAP3": "mirage",
       "UPCOM_MAP3_SCORE": "MATCH 4",
-      "UPCOM_Cest": "",
+      "UPCOM_Cest": "cest",
       "UPCOM_RectangleUP": "C:\\projects\\NewTimer\\files\\rectUp.png",
       "UPCOM_RectangleLOW": "C:\\projects\\NewTimer\\files\\rectLow.png",
       "UPCOM_vs_mini": "vs",
@@ -418,16 +418,16 @@
     },
     "3": {
       "TEAM1": {
-        "winPoints": 35,
-        "losePoints": -35,
-        "rank": 4,
-        "currentPoints": 84
+        "winPoints": null,
+        "losePoints": null,
+        "rank": null,
+        "currentPoints": null
       },
       "TEAM2": {
-        "winPoints": 35,
-        "losePoints": -35,
-        "rank": 2,
-        "currentPoints": 80
+        "winPoints": null,
+        "losePoints": null,
+        "rank": null,
+        "currentPoints": null
       }
     },
     "4": {

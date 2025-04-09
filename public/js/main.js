@@ -66,6 +66,65 @@ async function updateAggregatedVRS() {
   }
 }
 
+function calculateTournamentDay() {
+  const startDateValue = document.getElementById("tournamentStart").value;
+  if (!startDateValue) {
+    return "";
+  }
+  const startDate = new Date(startDateValue);
+  const today = new Date();
+
+  // Вычисляем разницу в днях (округляем вниз и прибавляем 1)
+  const diffTime = today - startDate;
+  let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  // Если разница отрицательная (т.е. турнир ещё не начался) – можно выводить пустую строку
+  if (diffDays < 1) {
+    return "";
+  }
+  return "DAY " + diffDays;
+}
+
+function updateTournamentDay() {
+  const display = document.getElementById("tournamentDayDisplay");
+  if (display) {
+    display.textContent = calculateTournamentDay();
+  }
+}
+
+// Обновлять значение дня при изменении даты старта (и можно добавить аналогично для даты окончания, если нужно)
+document.getElementById("tournamentStart").addEventListener("change", updateTournamentDay);
+// Если требуется – можно добавить слушатель и для "tournamentEnd"
+
+
+function gatherCustomFieldsData() {
+  return {
+    upcomingMatches: document.getElementById("upcomingMatchesInput").value,
+    galaxyBattle: document.getElementById("galaxyBattleInput").value,
+    tournamentDay: document.getElementById("tournamentDayDisplay").textContent, // вычисленное значение
+    groupStage: document.getElementById("groupStageInput").value
+  };
+}
+
+async function saveCustomFields() {
+  const customData = gatherCustomFieldsData();
+  try {
+    const response = await saveData("/api/customfields", customData);
+    console.log("Custom fields saved:", response);
+  } catch (error) {
+    console.error("Ошибка сохранения custom fields:", error);
+  }
+}
+
+document.getElementById("upcomingMatchesInput").addEventListener("change", saveCustomFields);
+document.getElementById("galaxyBattleInput").addEventListener("change", saveCustomFields);
+document.getElementById("groupStageInput").addEventListener("change", saveCustomFields);
+document.getElementById("tournamentStart").addEventListener("change", () => {
+  updateTournamentDay();
+  saveCustomFields();
+});
+document.getElementById("tournamentEnd").addEventListener("change", saveCustomFields);
+
 
 // Функция для получения JSON-данных и вывода их на страницу
 async function updateJsonOutput() {

@@ -22,6 +22,23 @@
       });
     </script>
 
+<!-- Добавляем новый блок для кастомных полей -->
+<div class="custom-fields" style="margin-bottom: 20px; padding: 10px; background: #444; border-radius: 8px;">
+  <input type="text" id="upcomingMatchesInput" placeholder="UPCOMING MATCHES" style="margin-right: 10px; padding: 6px;">
+  <input type="text" id="galaxyBattleInput" placeholder="GALAXY BATTLE" style="margin-right: 10px; padding: 6px;">
+  
+  <span class="tournament-dates" style="margin-right: 10px;">
+    <label for="tournamentStart">Начало турнира:</label>
+    <input type="date" id="tournamentStart" style="padding: 4px;">
+    <label for="tournamentEnd">Окончание турнира:</label>
+    <input type="date" id="tournamentEnd" style="padding: 4px;">
+    <!-- Здесь будет выводиться текущий день турнира -->
+    <span id="tournamentDayDisplay" style="margin-left: 10px; font-weight: bold;"></span>
+  </span>
+  
+  <input type="text" id="groupStageInput" placeholder="GROUP STAGE" style="padding: 6px;">
+</div>
+
 
     <div class="dashboard">
       <!-- 1) Первая строка: 4 матча -->

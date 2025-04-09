@@ -126,6 +126,24 @@ function loadDataFromFile() {
 }
 loadDataFromFile();
 
+
+// В самом верху объявляем переменную для хранения custom fields (можно и в db.json сохранять, если нужно)
+let customFieldsData = {};
+
+app.get("/api/customfields", (req, res) => {
+  res.json([customFieldsData]);
+});
+
+app.post("/api/customfields", (req, res) => {
+  customFieldsData = req.body;
+  console.log("Получены custom fields:", customFieldsData);
+  // При необходимости можно сохранить в db.json (расширив функцию saveDataToFile, например)
+  res.json(customFieldsData);
+});
+
+
+
+
 // Функция сохранения данных в db.json
 function saveDataToFile() {
   const jsonData = {
