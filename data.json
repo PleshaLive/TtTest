@@ -15,7 +15,7 @@
     {
       "id": "1741168676933",
       "name": "TNL",
-      "logo": "/logos/1741168673916-TNL.png",
+      "logo": "/logos/1744296596920-TNL.png",
       "score": 0
     },
     {
@@ -115,12 +115,6 @@
       "score": 0
     },
     {
-      "id": "1742912323545",
-      "name": "Imperial Valkyries",
-      "logo": "/logos/1742912322748-Imperial Valkyries.png",
-      "score": 0
-    },
-    {
       "id": "1742925193043",
       "name": "Passion UA",
       "logo": "/logos/1742925192172-Passion UA.png",
@@ -184,6 +178,36 @@
       "id": "1744211594870",
       "name": "SINNERS",
       "logo": "/logos/1744211594196-SINNERS.png",
+      "score": 0
+    },
+    {
+      "id": "1744295990190",
+      "name": "Novaq",
+      "logo": "/logos/1744295989462-1744209074741-Novaq.png",
+      "score": 0
+    },
+    {
+      "id": "1744296013746",
+      "name": "NAVI Junior",
+      "logo": "/logos/1744296012816-1744209058473-NAVI Junior.png",
+      "score": 0
+    },
+    {
+      "id": "1744296205095",
+      "name": "ENCE",
+      "logo": "/logos/1744296204562-ENCE.png",
+      "score": 0
+    },
+    {
+      "id": "1744296497861",
+      "name": "PARIVISION",
+      "logo": "/logos/1744296497166-1744209136982-PARIVISION.png",
+      "score": 0
+    },
+    {
+      "id": "1744296521251",
+      "name": "Sangal",
+      "logo": "/logos/1744296520421-1744209170831-Sangal.png",
       "score": 0
     }
   ],
@@ -889,7 +913,7 @@
       "name": "tory",
       "steamId": "76561198047829655",
       "photo": "/players/1742912375256-tory.png",
-      "teamId": "1742912323545",
+      "teamId": null,
       "match_stats": {}
     },
     {
@@ -897,7 +921,7 @@
       "name": "zAAz",
       "steamId": "76561197990140855",
       "photo": "/players/1742912412110-zAAz.png",
-      "teamId": "1742912323545",
+      "teamId": null,
       "match_stats": {}
     },
     {
@@ -905,7 +929,7 @@
       "name": "twenty3",
       "steamId": "76561198809859276",
       "photo": "/players/1742912430961-twenty3.png",
-      "teamId": "1742912323545",
+      "teamId": null,
       "match_stats": {}
     },
     {
@@ -913,7 +937,7 @@
       "name": "ANa",
       "steamId": "76561198116899423",
       "photo": "/players/1742912496344-ANa.png",
-      "teamId": "1742912323545",
+      "teamId": null,
       "match_stats": {}
     },
     {
@@ -921,7 +945,7 @@
       "name": "Kat",
       "steamId": "76561198371036559",
       "photo": "/players/1742912557336-kat.png",
-      "teamId": "1742912323545",
+      "teamId": null,
       "match_stats": {}
     },
     {
