@@ -49,21 +49,34 @@ export function gatherMapVetoData(/* matchesData */) {
     const teamKey = row.querySelector(".veto-team").value; // "TEAM1" или "TEAM2"
     const mapName = row.querySelector(".veto-map").value;
     const side    = row.querySelector(".veto-side").value;
-
-    // Подставляем реальные имя и лого
+  
+    // Подставляем реальные имя и лого из селектов
     const realTeamName = teamKey === "TEAM1" ? team1Name : team2Name;
     const realTeamLogo = teamKey === "TEAM1" ? team1Logo : team2Logo;
-
+  
+    // Вычисляем ссылку на изображение карты (vetoIMG)
+    const vetoIMG = `D:\\Broadcast\\BroadcastElements\\Map_veto\\${action}\\${mapName}.png`;
+  
+    // Вычисляем ссылку на изображение стороны (sideIMG)
+    let sideIMG = "";
+    if (side === "CT") {
+      sideIMG = "D:\\Broadcast\\BroadcastElements\\Map_veto\\side\\ct.png";
+    } else if (side === "T") {
+      sideIMG = "D:\\Broadcast\\BroadcastElements\\Map_veto\\side\\t.png";
+    }
+  
     vetoArr.push({
-      mapIndex:  i,
+      mapIndex: i,
       action,
-      team:      teamKey,
-      teamName:  realTeamName,
-      teamLogo:  realTeamLogo,
-      map:       mapName,
-      side
+      team: teamKey,
+      teamName: realTeamName,
+      teamLogo: realTeamLogo,
+      map: mapName,
+      side,
+      vetoIMG, // добавленное поле для карты
+      sideIMG  // добавленное поле для стороны
     });
-  });
+  });  
 
   return {
     matchIndex,
