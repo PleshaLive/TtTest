@@ -76,6 +76,17 @@ function updateMatchesUI(matches) {
     // --- Обновляем данные по картам и счёту ---
     const matchColumn = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
     if (matchColumn) {
+      // Восстанавливаем данные о победителе, если они есть в объекте match
+      if (match.TEAMWINNER) {
+        matchColumn.setAttribute("data-winner", match.TEAMWINNER);
+      } else {
+        matchColumn.removeAttribute("data-winner");
+      }
+      
+      // Вызываем функции обновления кнопок победителя и подсветки
+      updateWinnerButtonLabels(matchIndex);
+      refreshWinnerHighlight(matchIndex);
+      
       // Определяем, какой статус использовать для отображения карт:
       // Если статус завершён, используем FINISHED_*, иначе, если LIVE – LIVE_*, иначе UPCOM_*.
       let prefix = "";
@@ -93,7 +104,7 @@ function updateMatchesUI(matches) {
         const mapKey = prefix + `MAP${i + 1}`;
         const scoreKey = prefix + `MAP${i + 1}_SCORE`;
         
-        // Добавляем логирование для отладки:
+        // Логирование для отладки:
         console.log(`Матч ${matchIndex}: ${mapKey} =`, match[mapKey], "   ", `${scoreKey} =`, match[scoreKey]);
         
         const mapSelect = row.querySelector(".map-name-select");
@@ -108,6 +119,7 @@ function updateMatchesUI(matches) {
     }
   });
 }
+
 
 
 // Обновление Map Veto UI
