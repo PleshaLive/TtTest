@@ -76,15 +76,6 @@ function updateMatchesUI(matches) {
     // --- Обновляем данные по картам и счёту ---
     const matchColumn = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
     if (matchColumn) {
-      // Восстанавливаем информацию о победителе:
-      if (match.TEAMWINNER) {
-        matchColumn.setAttribute("data-winner", match.TEAMWINNER);
-      } else {
-        matchColumn.removeAttribute("data-winner");
-      }
-      // Обновляем лейблы кнопок победителя и подсветку
-      updateWinnerButtonLabels(matchIndex);
-      refreshWinnerHighlight(matchIndex);
       // Определяем, какой статус использовать для отображения карт:
       // Если статус завершён, используем FINISHED_*, иначе, если LIVE – LIVE_*, иначе UPCOM_*.
       let prefix = "";
