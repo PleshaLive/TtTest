@@ -46,14 +46,12 @@ socket.on("customFieldsUpdate", (newFields) => {
 function updateMatchesUI(matches) {
   matches.forEach((match, index) => {
     const matchIndex = index + 1;
-    
-    // Обновляем время матча
+    // Время
     const timeInput = document.getElementById(`timeInput${matchIndex}`);
     if (timeInput) {
       timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
     }
-    
-    // Обновляем статус матча
+    // Статус
     const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
     if (statusSelect) {
       if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -64,36 +62,33 @@ function updateMatchesUI(matches) {
         statusSelect.value = "UPCOM";
       }
     }
-    
-    // Обновляем команды
+    // Команды
     const team1Select = document.getElementById(`team1Select${matchIndex}`);
-    if (team1Select && (match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1)) {
-      team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1;
+    if (team1Select) {
+      team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || "";
     }
     const team2Select = document.getElementById(`team2Select${matchIndex}`);
-    if (team2Select && (match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2)) {
-      team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2;
+    if (team2Select) {
+      team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || "";
     }
-    
-    // Обновляем данные по картам (например, название карты и счёт)
-    const matchColumn = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
-    if (matchColumn) {
-      const mapRows = matchColumn.querySelectorAll(".map-row");
-      mapRows.forEach((row, i) => {
-        const mapKey = `MAP${i + 1}`;
-        const scoreKey = `MAP${i + 1}_SCORE`;
-        const mapSelect = row.querySelector(".map-name-select");
-        const scoreInput = row.querySelector(".map-score-input");
-        if (mapSelect && match[mapKey] !== undefined) {
-          mapSelect.value = match[mapKey];
-        }
-        if (scoreInput && match[scoreKey] !== undefined) {
-          scoreInput.value = match[scoreKey];
-        }
-      });
-    }
+    // Карты
+    const column = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
+    const mapRows = column.querySelectorAll(".map-row");
+    mapRows.forEach((row, i) => {
+      const mapSel = row.querySelector(".map-name-select");
+      const scoreInp = row.querySelector(".map-score-input");
+      const mapKey = `MAP${i+1}`;
+      const scoreKey = `MAP${i+1}_SCORE`;
+      if (mapSel && match[mapKey] !== undefined) {
+        mapSel.value = match[mapKey];
+      }
+      if (scoreInp && match[scoreKey] !== undefined) {
+        scoreInp.value = match[scoreKey];
+      }
+    });
   });
 }
+
 
 // Обновление Map Veto UI
 function updateMapVetoUI(mapVetoData) {
@@ -156,11 +151,12 @@ function updateCustomFieldsUI(fields) {
   if (dayDisplay) {
     dayDisplay.textContent = fields.tournamentDay || "";
   }
-  const group = document.getElementById("groupStageInput");
-  if (group) {
-    group.value = fields.groupStage || "";
+  const groupStage = document.getElementById("groupStageInput");
+  if (groupStage) {
+    groupStage.value = fields.groupStage || "";
   }
 }
+
 
 // ========== Загрузка данных ==========
 
