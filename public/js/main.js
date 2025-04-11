@@ -72,13 +72,30 @@ function updateMatchesUI(matches) {
     if (team2Select && (match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2)) {
       team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2;
     }
-    // Обновляем карты и счёт
+    
+    // --- Обновляем данные по картам и счёту ---
     const matchColumn = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
     if (matchColumn) {
+      // Определяем, какой статус использовать для отображения карт:
+      // Если статус завершён, используем FINISHED_*, иначе, если LIVE – LIVE_*, иначе UPCOM_*.
+      let prefix = "";
+      if (match.FINISHED_MATCH_STATUS === "FINISHED") {
+        prefix = "FINISHED_";
+      } else if (match.LIVE_MATCH_STATUS === "LIVE") {
+        prefix = "LIVE_";
+      } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
+        prefix = "UPCOM_";
+      }
+      
       const mapRows = matchColumn.querySelectorAll(".map-row");
       mapRows.forEach((row, i) => {
-        const mapKey = `MAP${i + 1}`;
-        const scoreKey = `MAP${i + 1}_SCORE`;
+        // Формируем ключи с префиксом.
+        const mapKey = prefix + `MAP${i + 1}`;
+        const scoreKey = prefix + `MAP${i + 1}_SCORE`;
+        
+        // Добавляем логирование для отладки:
+        console.log(`Матч ${matchIndex}: ${mapKey} =`, match[mapKey], "   ", `${scoreKey} =`, match[scoreKey]);
+        
         const mapSelect = row.querySelector(".map-name-select");
         const scoreInput = row.querySelector(".map-score-input");
         if (mapSelect && match[mapKey] !== undefined) {
@@ -91,6 +108,7 @@ function updateMatchesUI(matches) {
     }
   });
 }
+
 
 // Обновление Map Veto UI
 function updateMapVetoUI(mapVetoData) {
