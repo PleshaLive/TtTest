@@ -336,11 +336,13 @@ h1 {
 }
 
 .apply-button {
-  position: absolute;
+  position: fixed;      /* Было absolute */
+  top: 10px;            /* Ставим, как раньше */
+  right: 10px;          /* Ставим, как раньше */
+  z-index: 1000;        /* Чтобы не заслоняли другие элементы */
+
   width: 178px;
   height: 62px;
-  left: 2020px;
-  top: 1088px;
 
   background: linear-gradient(265.1deg, #332F6D 2.59%, #746EC8 96.74%);
   border: 1px solid #311748;
@@ -363,7 +365,8 @@ h1 {
 }
 
 .apply-button:hover {
-  filter: brightness(1.15); /* Лёгкая подсветка */
-  transform: scale(1.02);   /* Немного увеличивается */
+  filter: brightness(1.15); 
+  transform: scale(1.02);   
   box-shadow: 0 0 10px rgba(116, 110, 200, 0.5);
 }
+
