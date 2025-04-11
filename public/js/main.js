@@ -9,21 +9,20 @@ initMatches();
 initMapVeto();
 initVRS();
 
-// Подписываемся на socket.io события для обновлений
+// ========== Socket.io подписки ==========
 
 // Обновление матчей (Matches 1–4)
 // Сервер посылает событие "jsonUpdate", содержащее массив матчей
 socket.on("jsonUpdate", (matches) => {
   console.log("Получено обновление JSON (Matches):", matches);
   updateMatchesUI(matches);
-  // Можно также обновить область для отладки (например, JSON-вывод)
   const jsonOutput = document.getElementById("jsonOutput");
   if (jsonOutput) {
     jsonOutput.textContent = JSON.stringify(matches, null, 2);
   }
 });
 
-// Обновление Map Veto – оставляем как было
+// Обновление Map Veto
 socket.on("mapVetoUpdate", (updatedMapVeto) => {
   console.log("Получены обновления Map Veto:", updatedMapVeto);
   updateMapVetoUI(updatedMapVeto);
@@ -35,16 +34,26 @@ socket.on("vrsUpdate", (vrsData) => {
   updateVRSUI(vrsData);
 });
 
-// Функция обновления UI для Matches
+// Обновление верхнего блока (custom fields)
+socket.on("customFieldsUpdate", (newFields) => {
+  console.log("Получены обновления customFields:", newFields);
+  updateCustomFieldsUI(newFields);
+});
+
+// ========== Функции обновления UI ==========
+
+// Обновление Matches UI (включая поля времени, статус, команды и данные по картам)
 function updateMatchesUI(matches) {
   matches.forEach((match, index) => {
     const matchIndex = index + 1;
-    // Обновляем поле времени матча
+    
+    // Обновляем время матча
     const timeInput = document.getElementById(`timeInput${matchIndex}`);
     if (timeInput) {
       timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
     }
-    // Обновляем селект статуса матча
+    
+    // Обновляем статус матча
     const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
     if (statusSelect) {
       if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -54,10 +63,9 @@ function updateMatchesUI(matches) {
       } else if (match.UPCOM_MATCH_STATUS === "UPCOM") {
         statusSelect.value = "UPCOM";
       }
-      // Если у вас есть функция обновления цвета статуса, вызовите её здесь:
-      // updateStatusColor(statusSelect);
     }
-    // Обновляем селекты для команд (если они заполнены сохранёнными значениями)
+    
+    // Обновляем команды
     const team1Select = document.getElementById(`team1Select${matchIndex}`);
     if (team1Select && (match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1)) {
       team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1;
@@ -66,11 +74,28 @@ function updateMatchesUI(matches) {
     if (team2Select && (match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2)) {
       team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2;
     }
-    // Дополнительное обновление можно расширить по необходимости
+    
+    // Обновляем данные по картам (например, название карты и счёт)
+    const matchColumn = document.querySelector(`.match-column[data-match="${matchIndex}"]`);
+    if (matchColumn) {
+      const mapRows = matchColumn.querySelectorAll(".map-row");
+      mapRows.forEach((row, i) => {
+        const mapKey = `MAP${i + 1}`;
+        const scoreKey = `MAP${i + 1}_SCORE`;
+        const mapSelect = row.querySelector(".map-name-select");
+        const scoreInput = row.querySelector(".map-score-input");
+        if (mapSelect && match[mapKey] !== undefined) {
+          mapSelect.value = match[mapKey];
+        }
+        if (scoreInput && match[scoreKey] !== undefined) {
+          scoreInput.value = match[scoreKey];
+        }
+      });
+    }
   });
 }
 
-// Функция обновления UI для Map Veto (как ранее)
+// Обновление Map Veto UI
 function updateMapVetoUI(mapVetoData) {
   // Предполагается, что mapVetoData.veto – массив объектов с данными для каждой строки veto
   mapVetoData.veto.forEach((vetoItem, idx) => {
@@ -84,9 +109,8 @@ function updateMapVetoUI(mapVetoData) {
   });
 }
 
-// Функция обновления UI для VRS
+// Обновление VRS UI
 function updateVRSUI(vrsData) {
-  // Для каждого матча (индексы 1–4) обновляем соответствующие поля
   for (let i = 1; i <= 4; i++) {
     if (vrsData[i]) {
       const team1Win = document.getElementById(`team1WinPoints${i}`);
@@ -110,7 +134,36 @@ function updateVRSUI(vrsData) {
   }
 }
 
-// Функция загрузки матчей с сервера при загрузке страницы
+// Обновление UI для верхнего блока (custom fields)
+function updateCustomFieldsUI(fields) {
+  const upcoming = document.getElementById("upcomingMatchesInput");
+  if (upcoming) {
+    upcoming.value = fields.upcomingMatches || "";
+  }
+  const galaxy = document.getElementById("galaxyBattleInput");
+  if (galaxy) {
+    galaxy.value = fields.galaxyBattle || "";
+  }
+  const startDate = document.getElementById("tournamentStart");
+  if (startDate && fields.tournamentStart) {
+    startDate.value = fields.tournamentStart;
+  }
+  const endDate = document.getElementById("tournamentEnd");
+  if (endDate && fields.tournamentEnd) {
+    endDate.value = fields.tournamentEnd;
+  }
+  const dayDisplay = document.getElementById("tournamentDayDisplay");
+  if (dayDisplay) {
+    dayDisplay.textContent = fields.tournamentDay || "";
+  }
+  const group = document.getElementById("groupStageInput");
+  if (group) {
+    group.value = fields.groupStage || "";
+  }
+}
+
+// ========== Загрузка данных ==========
+
 async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
@@ -121,7 +174,6 @@ async function loadMatchesFromServer() {
   }
 }
 
-// Функция обновления агрегированного блока VRS (если используется)
 async function updateAggregatedVRS() {
   try {
     const res = await fetch("/api/vrs-all");
@@ -137,7 +189,7 @@ async function updateAggregatedVRS() {
   }
 }
 
-// Вычисление и обновление дня турнира (как ранее)
+// Функция вычисления текущего дня турнира
 function calculateTournamentDay() {
   const startDateValue = document.getElementById("tournamentStart").value;
   if (!startDateValue) { return ""; }
@@ -156,45 +208,47 @@ function updateTournamentDay() {
   }
 }
 
-// Привязка обработчиков изменения дат (при необходимости)
+// Привязка обработчиков изменения дат
 document.getElementById("tournamentStart").addEventListener("change", updateTournamentDay);
 document.getElementById("tournamentEnd").addEventListener("change", updateTournamentDay);
 
-// Кастомные поля – сбор и сохранение
+// ========== Функции сбора данных ==========
+
 function gatherCustomFieldsData() {
   return {
     upcomingMatches: document.getElementById("upcomingMatchesInput").value,
     galaxyBattle: document.getElementById("galaxyBattleInput").value,
+    tournamentStart: document.getElementById("tournamentStart").value,
+    tournamentEnd: document.getElementById("tournamentEnd").value,
     tournamentDay: document.getElementById("tournamentDayDisplay").textContent,
     groupStage: document.getElementById("groupStageInput").value
   };
 }
 
-async function saveCustomFields() {
-  const customData = gatherCustomFieldsData();
-  try {
-    const response = await saveData("/api/customfields", customData);
-    console.log("Custom fields saved:", response);
-  } catch (error) {
-    console.error("Ошибка сохранения custom fields:", error);
-  }
-}
+// Функции gatherMatchesData, gatherMapVetoData и gatherVRSData импортируются из соответствующих модулей
+
+// ========== Функция Apply ==========
 
 // Функция, которая по нажатию на кнопку Apply собирает все данные и отправляет их на сервер
 async function applyChanges() {
   try {
+    // Сохраняем данные матчей
     const matchesData = gatherMatchesData();
     await saveData("/api/matchdata", matchesData);
 
+    // Сохраняем данные Map Veto
     const mapVetoData = gatherMapVetoData();
     await saveData("/api/mapveto", mapVetoData);
 
+    // Сохраняем данные VRS
     const vrsData = gatherVRSData();
     await saveData("/api/vrs", vrsData);
 
-    await saveCustomFields();
+    // Сохраняем данные верхнего блока (custom fields)
+    const customData = gatherCustomFieldsData();
+    await saveData("/api/customfields", customData);
 
-    // После сохранения обновляем данные (загрузка обновлений с сервера)
+    // После сохранения загружаем обновлённые данные
     loadMatchesFromServer();
     loadAllVRS();
     updateAggregatedVRS();
@@ -208,7 +262,8 @@ async function applyChanges() {
 // Привязываем обработчик на кнопку Apply (кнопка должна иметь id="applyButton" в HTML)
 document.getElementById("applyButton").addEventListener("click", applyChanges);
 
-// При загрузке страницы загружаем начальные данные для матчей и VRS
+// ========== Инициализация при загрузке страницы ==========
+
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     loadMatchesFromServer();

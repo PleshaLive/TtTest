@@ -357,6 +357,21 @@ app.post("/api/vrs", (req, res) => {
   res.json(savedVRS);
 });
 
+
+// server.js (фрагмент)
+app.post("/api/customfields", (req, res) => {
+  customFieldsData = req.body;
+  console.log("Получены custom fields:", customFieldsData);
+  
+  // Дополнительно сохраняем в db.json, если нужно:
+  saveDataToFile();
+
+  // Рассылаем обновления по сокету
+  io.emit("customFieldsUpdate", customFieldsData);
+
+  res.json(customFieldsData);
+});
+
 // --- API для списка команд из файла data.json ---
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
