@@ -115,7 +115,8 @@ function loadDataFromFile() {
     fs.writeFileSync(dbFilePath, JSON.stringify({
       matches: [],
       mapVeto: {},
-      vrs: {}
+      vrs: {},
+      customFields: {}   // <-- Добавляем для custom fields
     }, null, 2));
   }
   const rawData = fs.readFileSync(dbFilePath, "utf8");
@@ -123,7 +124,9 @@ function loadDataFromFile() {
   savedMatches = jsonData.matches || [];
   savedMapVeto = jsonData.mapVeto || {};
   savedVRS = jsonData.vrs || {};
+  customFieldsData = jsonData.customFields || {};  // <-- Загружаем custom fields
 }
+
 loadDataFromFile();
 
 // Переменная для хранения custom fields (если потребуется сохранять их в db.json, можно расширить saveDataToFile)
@@ -144,10 +147,12 @@ function saveDataToFile() {
   const jsonData = {
     matches: savedMatches,
     mapVeto: savedMapVeto,
-    vrs: savedVRS
+    vrs: savedVRS,
+    customFields: customFieldsData   // <-- Сохраняем custom fields
   };
   fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
 }
+
 
 // Функция форматирования winPoints
 function formatWinPoints(value) {
@@ -359,18 +364,23 @@ app.post("/api/vrs", (req, res) => {
 
 
 // server.js (фрагмент)
+app.get("/api/customfields", (req, res) => {
+  res.json([customFieldsData]); // Возвращаем объект custom fields
+});
+
 app.post("/api/customfields", (req, res) => {
-  customFieldsData = req.body;
+  customFieldsData = req.body; // Ожидаем, что клиент пришлёт объект с нужными полями
   console.log("Получены custom fields:", customFieldsData);
   
-  // Дополнительно сохраняем в db.json, если нужно:
+  // Сохраняем данные в db.json
   saveDataToFile();
-
-  // Рассылаем обновления по сокету
+  
+  // Рассылаем обновление всем клиентам
   io.emit("customFieldsUpdate", customFieldsData);
-
+  
   res.json(customFieldsData);
 });
+
 
 // --- API для списка команд из файла data.json ---
 const teamsDataFile = path.join(__dirname, "data.json");

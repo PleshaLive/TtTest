@@ -40,6 +40,7 @@ socket.on("customFieldsUpdate", (newFields) => {
   updateCustomFieldsUI(newFields);
 });
 
+
 // ========== Функции обновления UI ==========
 
 // Обновление Matches UI (включая поля времени, статус, команды и данные по картам)
@@ -157,6 +158,16 @@ function updateCustomFieldsUI(fields) {
   }
 }
 
+async function loadCustomFieldsFromServer() {
+  try {
+    const response = await fetch("/api/customfields");
+    const [data] = await response.json(); // Ожидаем массив, берем первый элемент
+    updateCustomFieldsUI(data);
+  } catch (err) {
+    console.error("Ошибка загрузки custom fields:", err);
+  }
+}
+
 
 // ========== Загрузка данных ==========
 
@@ -221,6 +232,7 @@ function gatherCustomFieldsData() {
   };
 }
 
+
 // Функции gatherMatchesData, gatherMapVetoData и gatherVRSData импортируются из соответствующих модулей
 
 // ========== Функция Apply ==========
@@ -244,7 +256,7 @@ async function applyChanges() {
     const customData = gatherCustomFieldsData();
     await saveData("/api/customfields", customData);
 
-    // После сохранения загружаем обновлённые данные
+    // После успешного сохранения обновляем данные с сервера
     loadMatchesFromServer();
     loadAllVRS();
     updateAggregatedVRS();
@@ -255,6 +267,7 @@ async function applyChanges() {
   }
 }
 
+
 // Привязываем обработчик на кнопку Apply (кнопка должна иметь id="applyButton" в HTML)
 document.getElementById("applyButton").addEventListener("click", applyChanges);
 
@@ -264,5 +277,7 @@ window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     loadMatchesFromServer();
     loadAllVRS();
+    loadCustomFieldsFromServer(); // Загружаем верхний блок
   }, 500);
 });
+
