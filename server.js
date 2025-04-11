@@ -77,7 +77,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ====================================
-   Работа с данными: matches, mapVeto, VRS
+   Работа с данными: matches, mapVeto, VRS, customFields
    ==================================== */
 
 // Дефолтные пути для логотипов (оставляем без изменений)
@@ -106,6 +106,9 @@ let savedVRS = {
   }
 };
 
+// Дополнительные данные – верхний блок (custom fields)
+let customFieldsData = {};
+
 // Путь к файлу базы данных (db.json)
 const dbFilePath = path.join(__dirname, "db.json");
 
@@ -115,7 +118,8 @@ function loadDataFromFile() {
     fs.writeFileSync(dbFilePath, JSON.stringify({
       matches: [],
       mapVeto: {},
-      vrs: {}
+      vrs: {},
+      customFields: {}   // Добавляем поле для custom fields
     }, null, 2));
   }
   const rawData = fs.readFileSync(dbFilePath, "utf8");
@@ -123,28 +127,17 @@ function loadDataFromFile() {
   savedMatches = jsonData.matches || [];
   savedMapVeto = jsonData.mapVeto || {};
   savedVRS = jsonData.vrs || {};
+  customFieldsData = jsonData.customFields || {}; // Загружаем custom fields
 }
 loadDataFromFile();
-
-// Переменная для хранения custom fields (если потребуется сохранять их в db.json, можно расширить saveDataToFile)
-let customFieldsData = {};
-
-app.get("/api/customfields", (req, res) => {
-  res.json([customFieldsData]);
-});
-
-app.post("/api/customfields", (req, res) => {
-  customFieldsData = req.body;
-  console.log("Получены custom fields:", customFieldsData);
-  res.json(customFieldsData);
-});
 
 // Функция сохранения данных в db.json
 function saveDataToFile() {
   const jsonData = {
     matches: savedMatches,
     mapVeto: savedMapVeto,
-    vrs: savedVRS
+    vrs: savedVRS,
+    customFields: customFieldsData  // Сохраняем custom fields
   };
   fs.writeFileSync(dbFilePath, JSON.stringify(jsonData, null, 2), "utf8");
 }
@@ -357,6 +350,21 @@ app.post("/api/vrs", (req, res) => {
   res.json(savedVRS);
 });
 
+// --- API для custom fields ---
+// GET custom fields
+app.get("/api/customfields", (req, res) => {
+  res.json([customFieldsData]);
+});
+// POST custom fields
+app.post("/api/customfields", (req, res) => {
+  customFieldsData = req.body;
+  console.log("Получены custom fields:", customFieldsData);
+  saveDataToFile();
+  // Оповещаем всех клиентов
+  io.emit("customFieldsUpdate", customFieldsData);
+  res.json(customFieldsData);
+});
+
 // --- API для списка команд из файла data.json ---
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
@@ -385,6 +393,8 @@ io.on("connection", (socket) => {
   console.log("Клиент подключён");
   // Отправляем текущие данные матчей сразу при подключении
   socket.emit("jsonUpdate", savedMatches);
+  // Отправляем custom fields, чтобы верхний блок отобразил актуальные значения
+  socket.emit("customFieldsUpdate", customFieldsData);
 });
 
 server.listen(port, "0.0.0.0", () => {
