@@ -126,8 +126,7 @@ function loadDataFromFile() {
 }
 loadDataFromFile();
 
-
-// В самом верху объявляем переменную для хранения custom fields (можно и в db.json сохранять, если нужно)
+// Переменная для хранения custom fields (если потребуется сохранять их в db.json, можно расширить saveDataToFile)
 let customFieldsData = {};
 
 app.get("/api/customfields", (req, res) => {
@@ -137,12 +136,8 @@ app.get("/api/customfields", (req, res) => {
 app.post("/api/customfields", (req, res) => {
   customFieldsData = req.body;
   console.log("Получены custom fields:", customFieldsData);
-  // При необходимости можно сохранить в db.json (расширив функцию saveDataToFile, например)
   res.json(customFieldsData);
 });
-
-
-
 
 // Функция сохранения данных в db.json
 function saveDataToFile() {
@@ -191,15 +186,6 @@ app.get("/api/matchdata", (req, res) => {
   res.json(savedMatches);
 });
 
-// Новый эндпоинт для VRS по всем 4 матчам
-app.get("/api/vrs-all", (req, res) => {
-  const allVRS = {};
-  for (let matchId = 1; matchId <= 4; matchId++) {
-    allVRS[matchId] = getVRSResponse(matchId);
-  }
-  res.json(allVRS);
-});
-
 app.get("/api/matchdata/:matchIndex", (req, res) => {
   const index = parseInt(req.params.matchIndex, 10) - 1;
   if (isNaN(index) || index < 0 || index >= savedMatches.length) {
@@ -232,7 +218,7 @@ app.post("/api/matchdata", (req, res) => {
   
   saveDataToFile();
   
-  // Эмитим событие "jsonUpdate" с актуальными данными
+  // Эмитим событие "jsonUpdate" с актуальными данными матчей
   io.emit("jsonUpdate", savedMatches);
   
   res.json(savedMatches);
@@ -245,7 +231,7 @@ app.post("/api/mapveto", (req, res) => {
   savedMapVeto = req.body;
   console.log("Получены данные mapveto:", savedMapVeto);
   saveDataToFile();
-  // При необходимости можно эмитить отдельное событие для mapVeto
+  // Отправляем обновление Map Veto всем клиентам
   io.emit("mapVetoUpdate", savedMapVeto);
   res.json(savedMapVeto);
 });
@@ -277,7 +263,7 @@ function getVRSResponse(matchId) {
         FINISHED: {
           TEAM1: {
             winPoints: formatWinPoints(vrsData.TEAM1.winPoints),
-            losePoints: "",  // здесь оставляем пустым, если матч завершён
+            losePoints: "",  // оставляем пустым, если матч завершён
             rank: vrsData.TEAM1.rank,
             currentPoints_win: vrsData.TEAM1.currentPoints,
             currentPoints_lose: "",
@@ -354,7 +340,6 @@ function getVRSResponse(matchId) {
   };
 }
 
-
 app.get("/api/vrs/:id", (req, res) => {
   const matchId = parseInt(req.params.id, 10);
   if (isNaN(matchId) || matchId < 1 || matchId > 4) {
@@ -363,12 +348,11 @@ app.get("/api/vrs/:id", (req, res) => {
   res.json([getVRSResponse(matchId)]);
 });
 
-
 app.post("/api/vrs", (req, res) => {
   savedVRS = req.body;
   console.log("Получены данные VRS:", savedVRS);
   saveDataToFile();
-  // Эмитим событие "vrsUpdate", если нужно обновление VRS у клиентов
+  // Эмитим событие "vrsUpdate" для всех клиентов
   io.emit("vrsUpdate", savedVRS);
   res.json(savedVRS);
 });
@@ -403,7 +387,6 @@ io.on("connection", (socket) => {
   socket.emit("jsonUpdate", savedMatches);
 });
 
-// Запускаем сервер, привязываясь к "0.0.0.0" (требуется для облачных платформ)
 server.listen(port, "0.0.0.0", () => {
   console.log(`Сервер запущен на http://0.0.0.0:${port}`);
 });

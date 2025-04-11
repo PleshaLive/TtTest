@@ -334,3 +334,15 @@ h1 {
   animation: rotate 10s linear infinite;
   pointer-events: none; /* <--- вот это главное */
 }
+#applyButton {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

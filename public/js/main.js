@@ -9,7 +9,37 @@ initMatches();
 initMapVeto();
 initVRS();
 
-// Функция для загрузки сохранённых данных с сервера и обновления UI
+// Подписываемся на событие обновления JSON (например, для матчей)
+socket.on("jsonUpdate", data => {
+  console.log("Получено обновление JSON:", data);
+  const jsonOutput = document.getElementById("jsonOutput");
+  if (jsonOutput) {
+    jsonOutput.textContent = JSON.stringify(data, null, 2);
+  }
+});
+
+// Подписываемся на событие обновления Map Veto
+socket.on("mapVetoUpdate", (updatedMapVeto) => {
+  console.log("Получены обновления Map Veto:", updatedMapVeto);
+  updateMapVetoUI(updatedMapVeto);
+});
+
+// Функция обновления UI для Map Veto
+function updateMapVetoUI(mapVetoData) {
+  // Предполагается, что mapVetoData.veto – массив объектов с данными по строкам
+  mapVetoData.veto.forEach((vetoItem, idx) => {
+    // Ищем строку таблицы по data-index (нумерация начинается с 1)
+    const row = document.querySelector(`#vetoTable tr[data-index="${idx + 1}"]`);
+    if (row) {
+      row.querySelector(".veto-action").value = vetoItem.action;
+      row.querySelector(".veto-map").value = vetoItem.map;
+      row.querySelector(".veto-team").value = vetoItem.team;
+      row.querySelector(".veto-side").value = vetoItem.side;
+    }
+  });
+}
+
+// Функция для загрузки матчей с сервера (при загрузке страницы)
 async function loadMatchesFromServer() {
   try {
     const response = await fetch("/api/matchdata");
@@ -17,12 +47,10 @@ async function loadMatchesFromServer() {
 
     matches.forEach((match, index) => {
       const matchIndex = index + 1;
-
       const timeInput = document.getElementById(`timeInput${matchIndex}`);
       if (timeInput) {
         timeInput.value = match.UPCOM_TIME || match.LIVE_TIME || match.FINISHED_TIME || "";
       }
-
       const statusSelect = document.getElementById(`statusSelect${matchIndex}`);
       if (statusSelect) {
         if (match.FINISHED_MATCH_STATUS === "FINISHED") {
@@ -33,16 +61,7 @@ async function loadMatchesFromServer() {
           statusSelect.value = "UPCOM";
         }
       }
-
-      const team1Select = document.getElementById(`team1Select${matchIndex}`);
-      if (team1Select) {
-        // Здесь подставляем выбранное значение из сохранённых данных
-        team1Select.value = match.UPCOM_TEAM1 || match.LIVE_TEAM1 || match.FINISHED_TEAM1 || team1Select.value;
-      }
-      const team2Select = document.getElementById(`team2Select${matchIndex}`);
-      if (team2Select) {
-        team2Select.value = match.UPCOM_TEAM2 || match.LIVE_TEAM2 || match.FINISHED_TEAM2 || team2Select.value;
-      }
+      // При необходимости обновляем другие поля (например, команды, логотипы и т.д.)
     });
   } catch (error) {
     console.error("Ошибка загрузки matchdata:", error);
@@ -55,8 +74,6 @@ async function updateAggregatedVRS() {
     if (!res.ok) return;
     const allVRS = await res.json();
     console.log("Агрегированные VRS:", allVRS);
-
-    // Предположим, что у вас есть блок <div id="aggregatedVRS"></div>:
     const aggregatedBlock = document.getElementById("aggregatedVRS");
     if (aggregatedBlock) {
       aggregatedBlock.textContent = JSON.stringify(allVRS, null, 2);
@@ -66,22 +83,15 @@ async function updateAggregatedVRS() {
   }
 }
 
+// Вычисление и обновление дня турнира (как реализовано ранее)
 function calculateTournamentDay() {
   const startDateValue = document.getElementById("tournamentStart").value;
-  if (!startDateValue) {
-    return "";
-  }
+  if (!startDateValue) { return ""; }
   const startDate = new Date(startDateValue);
   const today = new Date();
-
-  // Вычисляем разницу в днях (округляем вниз и прибавляем 1)
   const diffTime = today - startDate;
   let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-  // Если разница отрицательная (т.е. турнир ещё не начался) – можно выводить пустую строку
-  if (diffDays < 1) {
-    return "";
-  }
+  if (diffDays < 1) { return ""; }
   return "DAY " + diffDays;
 }
 
@@ -92,16 +102,12 @@ function updateTournamentDay() {
   }
 }
 
-// Обновлять значение дня при изменении даты старта (и можно добавить аналогично для даты окончания, если нужно)
-document.getElementById("tournamentStart").addEventListener("change", updateTournamentDay);
-// Если требуется – можно добавить слушатель и для "tournamentEnd"
-
-
+// Функции для кастомных полей (сбор и сохранение)
 function gatherCustomFieldsData() {
   return {
     upcomingMatches: document.getElementById("upcomingMatchesInput").value,
     galaxyBattle: document.getElementById("galaxyBattleInput").value,
-    tournamentDay: document.getElementById("tournamentDayDisplay").textContent, // вычисленное значение
+    tournamentDay: document.getElementById("tournamentDayDisplay").textContent,
     groupStage: document.getElementById("groupStageInput").value
   };
 }
@@ -116,74 +122,47 @@ async function saveCustomFields() {
   }
 }
 
-document.getElementById("upcomingMatchesInput").addEventListener("change", saveCustomFields);
-document.getElementById("galaxyBattleInput").addEventListener("change", saveCustomFields);
-document.getElementById("groupStageInput").addEventListener("change", saveCustomFields);
+// Обработчики изменения дат турнира для обновления отображаемого дня и кастомных полей
 document.getElementById("tournamentStart").addEventListener("change", () => {
   updateTournamentDay();
-  saveCustomFields();
 });
-document.getElementById("tournamentEnd").addEventListener("change", saveCustomFields);
+document.getElementById("tournamentEnd").addEventListener("change", () => {
+  updateTournamentDay();
+});
 
-
-// Функция для получения JSON-данных и вывода их на страницу
-async function updateJsonOutput() {
+// Функция, которая собирает все данные и отправляет их на сервер по нажатию кнопки Apply
+async function applyChanges() {
   try {
-    const res = await fetch("/api/matchdata");
-    const data = await res.json();
-    const jsonOutput = document.getElementById("jsonOutput");
-    if (jsonOutput) {
-      jsonOutput.textContent = JSON.stringify(data, null, 2);
-    }
+    // Собираем данные по матчам, Map Veto, VRS, а также кастомные поля
+    const matchesData = gatherMatchesData();
+    await saveData("/api/matchdata", matchesData);
+
+    const mapVetoData = gatherMapVetoData();
+    await saveData("/api/mapveto", mapVetoData);
+
+    const vrsData = gatherVRSData();
+    await saveData("/api/vrs", vrsData);
+
+    await saveCustomFields();
+
+    // Обновляем данные после сохранения (если требуется)
+    loadMatchesFromServer();
+    loadAllVRS();
+    updateAggregatedVRS();
+
+    console.log("Изменения успешно применены");
   } catch (error) {
-    console.error("Ошибка получения JSON:", error);
+    console.error("Ошибка при применении изменений:", error);
   }
 }
 
-// При загрузке страницы даем время на инициализацию селектов со списком команд,
-// затем загружаем сохранённые данные и обновляем интерфейс.
+// Привязываем обработчик на кнопку Apply (кнопка должна иметь id="applyButton" в HTML)
+document.getElementById("applyButton").addEventListener("click", applyChanges);
+
+// При загрузке страницы загружаем начальные данные
 window.addEventListener("DOMContentLoaded", () => {
-  // Задержка 500 мс для того, чтобы initMatches и populateTeamSelects успели заполнить селекты
   setTimeout(() => {
     loadMatchesFromServer();
     loadAllVRS();
-    updateJsonOutput(); // выводим JSON сразу после загрузки
   }, 500);
-});
-
-// Функция автосохранения с использованием дебаунсинга (500 мс)
-let autoSaveTimeout;
-function autoSave() {
-  if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-  autoSaveTimeout = setTimeout(async () => {
-    try {
-      const matchesData = gatherMatchesData();
-      await saveData("/api/matchdata", matchesData);
-
-      const mapVetoData = gatherMapVetoData();
-      await saveData("/api/mapveto", mapVetoData);
-
-      const vrsData = gatherVRSData();
-      await saveData("/api/vrs", vrsData);
-
-      // После сохранения обновляем VRS интерфейс для каждого матча
-      loadAllVRS();
-
-      // Обновляем агрегированный блок с данными (из /api/vrs-all)
-      updateAggregatedVRS();
-
-      console.log("Автосохранение прошло успешно");
-      updateJsonOutput();
-    } catch (err) {
-      console.error("Ошибка автосохранения:", err);
-    }
-  }, 500);
-}
-
-
-// Привязываем автосохранение ко всем input и select элементам
-document.querySelectorAll("input, select").forEach(element => {
-  element.addEventListener("change", () => {
-    autoSave(); // теперь при каждом изменении полей вызовется autoSave
-  });
 });
