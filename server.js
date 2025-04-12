@@ -10,11 +10,11 @@ const { Server: SocketIOServer } = require("socket.io");
 // Путь к файлу базы данных
 const dbFilePath = path.join(__dirname, "db.json");
 
-// Если файла базы нет, создаём его с унифицированной структурой
+// Если файла базы нет, создаём его с единой структурой
 let db = {};
 if (!fs.existsSync(dbFilePath)) {
   db = {
-    matches: {},
+    matches: [],       // NOTE: массив, т.к. в db.json "matches" уже в виде массива
     mapVeto: {},
     vrs: {},
     customFields: {}
@@ -34,22 +34,6 @@ function saveDB() {
       console.log("db.json успешно обновлен");
     }
   });
-}
-
-// Универсальная функция обновления данных для сущностей
-function handleUpdate(entity, key, newData, res) {
-  console.log(`[POST] /api/${entity} - обновление`, newData);
-  if (key) {
-    // Обновляем, если передан идентификатор, например matchId или id
-    db[entity][key] = newData;
-  } else {
-    // Если ключ не передан, используем поле id внутри newData
-    const id = newData.id;
-    db[entity][id] = newData;
-  }
-  saveDB();
-  io.emit(`${entity}Updated`, newData);
-  res.json({ success: true });
 }
 
 // Создаем приложение Express
@@ -87,6 +71,7 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
+  // NOTE: Пример проверки логина/пароля
   if (username === "StarGalaxy" && password === "FuckTheWorld1996") {
     req.session.authenticated = true;
     return res.redirect("/");
@@ -121,48 +106,78 @@ app.use(express.static(path.join(__dirname, "public")));
    Работа с данными: matches, mapVeto, vrs, customFields
 ==================================== */
 
-// Пример обработки логотипов – оставляем без изменений
-const defaultTeam1Logo = "C:\\projects\\vMix_score\\public\\logos\\default1.png";
-const defaultTeam2Logo = "C:\\projects\\vMix_score\\public\\logos\\default2.png";
-
-// Дополнительные in-memory данные (если потребуется)
-let savedMatches = [];       // не используется, так как у нас данные теперь в db.matches
-let savedMapVeto = {};       // аналогично db.mapVeto
-let savedVRS = {};           // аналог db.vrs
-let customFieldsData = {};   // аналог db.customFields
-
-// Загружаем in-memory данные при запуске (если требуются для legacy-логики)
-if (db.matches) savedMatches = Object.values(db.matches);
-if (db.mapVeto) savedMapVeto = db.mapVeto;
-if (db.vrs) savedVRS = db.vrs;
-if (db.customFields) customFieldsData = db.customFields;
-
-/* --- API эндпоинты --- */
-
 // API для матчей
 app.get("/api/matchdata", (req, res) => {
-  res.json(Object.values(db.matches));
+  // Просто возвращаем массив db.matches
+  res.json(db.matches);
 });
-app.get("/api/matchdata/:matchIndex", (req, res) => {
-  const matches = Object.values(db.matches);
-  const index = parseInt(req.params.matchIndex, 10) - 1;
-  if (isNaN(index) || index < 0 || index >= matches.length) {
-    return res.status(404).json({ message: `Матч с индексом ${req.params.matchIndex} не найден.` });
-  }
-  res.json([matches[index]]);
-});
+
+/*
+  Логика POST /api/matchdata:
+   1. Если пришёл массив, полностью перезаписываем db.matches
+   2. Если пришёл один объект, пытаемся найти его в массиве по некому ключу (например, id)
+      - если нашли, обновляем
+      - если нет, пушим
+   3. Если матч имеет статус FINISHED, обновляем VRS (как в вашем примере)
+   4. Сохраняем в файл
+   5. Отправляем событие io.emit('jsonUpdate', db.matches)
+   6. Возвращаем обновлённый массив
+*/
 app.post("/api/matchdata", (req, res) => {
-  // Если получен массив матчей, сохраняем каждый по id
-  if (Array.isArray(req.body)) {
-    req.body.forEach(item => {
-      db.matches[item.id] = item;
-    });
-  } else {
-    db.matches[req.body.id] = req.body;
+  let incomingMatches = req.body;
+
+  // Если это не массив, делаем массив из одного элемента
+  if (!Array.isArray(incomingMatches)) {
+    incomingMatches = [incomingMatches];
   }
+
+  // Обновляем db.matches
+  // NOTE: Вариант 1 (перезапись всего массива):
+  // db.matches = incomingMatches;
+
+  // NOTE: Вариант 2 (частичное обновление):
+  //  – Если нужно именно «частично» обновлять, ниже пример:
+  incomingMatches.forEach(newMatch => {
+    // Ищем в db.matches матч с таким же FINISHED_TIME / или любым полем, по которому можно сравнить
+    // Можно использовать поле 'TEAMWINNER' или какой-то 'id' (в идеале – дополнительное поле newMatch.id)
+    // Если в вашем объекте нету поля id, можно искать по комбинации полей
+    const index = db.matches.findIndex(m => m.FINISHED_TIME === newMatch.FINISHED_TIME);
+    if (index !== -1) {
+      // обновляем существующий
+      db.matches[index] = newMatch;
+    } else {
+      // добавляем новый
+      db.matches.push(newMatch);
+    }
+  });
+
+  // ============== Логика обновления VRS при статусе FINISHED ==============
+  // Если матч завершён, обновляем VRS (пример)
+  db.matches.forEach((match, idx) => {
+    // Пример: если FINISHED_MATCH_STATUS === "FINISHED", в VRS что-то делаем
+    if (match.FINISHED_MATCH_STATUS === "FINISHED") {
+      // matchId – любой способ понять, какой это матч (например, idx+1)
+      const matchId = idx + 1; 
+      // Достаём из db.vrs для matchId, если нет – пропускаем
+      if (!db.vrs[matchId]) return;
+      const winner = match.TEAMWINNER;
+      if (winner === match.FINISHED_TEAM1) {
+        db.vrs[matchId].TEAM1.currentPoints += db.vrs[matchId].TEAM1.winPoints;
+        db.vrs[matchId].TEAM2.currentPoints += db.vrs[matchId].TEAM2.losePoints;
+      } else if (winner === match.FINISHED_TEAM2) {
+        db.vrs[matchId].TEAM2.currentPoints += db.vrs[matchId].TEAM2.winPoints;
+        db.vrs[matchId].TEAM1.currentPoints += db.vrs[matchId].TEAM1.losePoints;
+      }
+    }
+  });
+  
+  // Сохраняем в файл
   saveDB();
-  io.emit("jsonUpdate", Object.values(db.matches));
-  res.json(Object.values(db.matches));
+  // Оповещаем всех клиентов
+  io.emit("jsonUpdate", db.matches);
+
+  // Возвращаем обновлённый массив
+  res.json(db.matches);
 });
 
 // API для Map Veto
@@ -170,9 +185,19 @@ app.get("/api/mapveto", (req, res) => {
   res.json(db.mapVeto);
 });
 app.post("/api/mapveto", (req, res) => {
-  // Используем matchId как ключ
-  const matchId = req.body.matchId;
-  handleUpdate("mapVeto", matchId, req.body, res);
+  /*
+    Предположим, mapVeto хранится в db.mapVeto:
+    {
+      matchIndex: ...,
+      teams: {...},
+      veto: [...],
+      ...
+    }
+   */
+  db.mapVeto = req.body;
+  saveDB();
+  io.emit("mapVetoUpdate", db.mapVeto);
+  res.json(db.mapVeto);
 });
 
 // API для VRS
@@ -182,21 +207,33 @@ app.get("/api/vrs/:id", (req, res) => {
   res.json([db.vrs[matchId]]);
 });
 app.post("/api/vrs", (req, res) => {
+  // req.body предполагается вида:
+  // {
+  //   matchId: "1",
+  //   TEAM1: { winPoints, losePoints, rank, currentPoints },
+  //   TEAM2: { ... }
+  // }
   const matchId = req.body.matchId;
-  handleUpdate("vrs", matchId, req.body, res);
+  db.vrs[matchId] = req.body;  // Сохраняем
+  saveDB();
+  io.emit("vrsUpdate", db.vrs);
+  res.json(db.vrs);
 });
 
 // API для custom fields
 app.get("/api/customfields", (req, res) => {
+  // Предположим, db.customFields – объект
   res.json([db.customFields]);
 });
 app.post("/api/customfields", (req, res) => {
-  // Если у custom fields есть привязка к конкретному матчу, можно использовать matchId, иначе просто сохраняем объект
-  const key = req.body.matchId || "global";
-  handleUpdate("customFields", key, req.body, res);
+  // Можно хранить как один общий объект
+  db.customFields = req.body;
+  saveDB();
+  io.emit("customFieldsUpdate", db.customFields);
+  res.json(db.customFields);
 });
 
-// API для списка команд из файла data.json
+// API для списка команд (из data.json)
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
   fs.readFile(teamsDataFile, "utf8", (err, data) => {
@@ -222,7 +259,9 @@ const io = new SocketIOServer(server);
 
 io.on("connection", (socket) => {
   console.log("Клиент подключён");
-  socket.emit("jsonUpdate", Object.values(db.matches));
+  // Отправляем текущие данные матчей сразу при подключении
+  socket.emit("jsonUpdate", db.matches);
+  // Отправляем custom fields, чтобы верхний блок отобразил актуальные значения
   socket.emit("customFieldsUpdate", db.customFields);
 });
 
