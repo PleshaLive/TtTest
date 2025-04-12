@@ -32,9 +32,13 @@ function saveDB() {
       console.error("Ошибка при сохранении db.json:", err);
     } else {
       console.log("db.json успешно обновлен");
+      // Сразу читаем файл и выводим его содержимое
+      const updatedData = fs.readFileSync(dbFilePath, "utf8");
+      console.log("Содержимое db.json после сохранения:", updatedData);
     }
   });
 }
+
 
 // Создаем приложение Express
 const app = express();
