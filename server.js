@@ -14,7 +14,7 @@ const dbFilePath = path.join(__dirname, "db.json");
 let db = {};
 if (!fs.existsSync(dbFilePath)) {
   db = {
-    matches: [],       // NOTE: массив, т.к. в db.json "matches" уже в виде массива
+    matches: [],       // матчи храним как массив
     mapVeto: {},
     vrs: {},
     customFields: {}
@@ -25,24 +25,23 @@ if (!fs.existsSync(dbFilePath)) {
   db = JSON.parse(rawData);
 }
 
-// Функция сохранения базы на диск
+// Функция сохранения базы на диск с логированием
 function saveDB() {
   fs.writeFile(dbFilePath, JSON.stringify(db, null, 2), (err) => {
     if (err) {
       console.error("Ошибка при сохранении db.json:", err);
     } else {
       console.log("db.json успешно обновлен");
-      // Сразу читаем файл и выводим его содержимое
+      // Для отладки: читаем и выводим содержимое файла
       const updatedData = fs.readFileSync(dbFilePath, "utf8");
       console.log("Содержимое db.json после сохранения:", updatedData);
     }
   });
 }
 
-
-// Создаем приложение Express
+// Создаем Express-приложение
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Логирование входящих запросов
 app.use((req, res, next) => {
@@ -64,7 +63,7 @@ app.use(session({
   secret: "322223",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // для HTTPS установить true
+  cookie: { secure: false } // при HTTPS установить true
 }));
 
 // Роут для страницы логина
@@ -75,7 +74,7 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  // NOTE: Пример проверки логина/пароля
+  // Пример проверки логина/пароля
   if (username === "StarGalaxy" && password === "FuckTheWorld1996") {
     req.session.authenticated = true;
     return res.redirect("/");
@@ -110,59 +109,40 @@ app.use(express.static(path.join(__dirname, "public")));
    Работа с данными: matches, mapVeto, vrs, customFields
 ==================================== */
 
-// API для матчей
+// === API для матчей ===
 app.get("/api/matchdata", (req, res) => {
-  // Просто возвращаем массив db.matches
+  // Отдаем массив матчей
   res.json(db.matches);
 });
 
 /*
-  Логика POST /api/matchdata:
-   1. Если пришёл массив, полностью перезаписываем db.matches
-   2. Если пришёл один объект, пытаемся найти его в массиве по некому ключу (например, id)
-      - если нашли, обновляем
-      - если нет, пушим
-   3. Если матч имеет статус FINISHED, обновляем VRS (как в вашем примере)
-   4. Сохраняем в файл
-   5. Отправляем событие io.emit('jsonUpdate', db.matches)
-   6. Возвращаем обновлённый массив
+  POST /api/matchdata:
+  - Если пришёл массив, обновляем весь список матчей (либо производим частичное обновление)
+  - Если пришёл один объект, ищем его по уникальному полю (например, id) и обновляем или добавляем новый матч
+  - Пример обновления VRS для матчей со статусом FINISHED (настраивается по потребности)
 */
 app.post("/api/matchdata", (req, res) => {
   let incomingMatches = req.body;
-
-  // Если это не массив, делаем массив из одного элемента
   if (!Array.isArray(incomingMatches)) {
     incomingMatches = [incomingMatches];
   }
-
-  // Обновляем db.matches
-  // NOTE: Вариант 1 (перезапись всего массива):
-  // db.matches = incomingMatches;
-
-  // NOTE: Вариант 2 (частичное обновление):
-  //  – Если нужно именно «частично» обновлять, ниже пример:
+  
   incomingMatches.forEach(newMatch => {
-    // Ищем в db.matches матч с таким же FINISHED_TIME / или любым полем, по которому можно сравнить
-    // Можно использовать поле 'TEAMWINNER' или какой-то 'id' (в идеале – дополнительное поле newMatch.id)
-    // Если в вашем объекте нету поля id, можно искать по комбинации полей
-    const index = db.matches.findIndex(m => m.FINISHED_TIME === newMatch.FINISHED_TIME);
+    // Если в объекте есть поле id, используем его для поиска; иначе можно использовать другой критерий
+    const index = db.matches.findIndex(m => m.id && newMatch.id && m.id === newMatch.id);
     if (index !== -1) {
-      // обновляем существующий
+      // Обновляем существующий матч
       db.matches[index] = newMatch;
     } else {
-      // добавляем новый
+      // Добавляем новый матч
       db.matches.push(newMatch);
     }
   });
-
-  // ============== Логика обновления VRS при статусе FINISHED ==============
-  // Если матч завершён, обновляем VRS (пример)
+  
+  // Пример: если матч завершён, обновляем VRS (этот блок можно изменить по необходимости)
   db.matches.forEach((match, idx) => {
-    // Пример: если FINISHED_MATCH_STATUS === "FINISHED", в VRS что-то делаем
     if (match.FINISHED_MATCH_STATUS === "FINISHED") {
-      // matchId – любой способ понять, какой это матч (например, idx+1)
-      const matchId = idx + 1; 
-      // Достаём из db.vrs для matchId, если нет – пропускаем
+      const matchId = (match.id) ? match.id : idx + 1;
       if (!db.vrs[matchId]) return;
       const winner = match.TEAMWINNER;
       if (winner === match.FINISHED_TEAM1) {
@@ -175,69 +155,49 @@ app.post("/api/matchdata", (req, res) => {
     }
   });
   
-  // Сохраняем в файл
   saveDB();
-  // Оповещаем всех клиентов
   io.emit("jsonUpdate", db.matches);
-
-  // Возвращаем обновлённый массив
   res.json(db.matches);
 });
 
-// API для Map Veto
+// === API для Map Veto ===
 app.get("/api/mapveto", (req, res) => {
   res.json(db.mapVeto);
 });
 app.post("/api/mapveto", (req, res) => {
-  /*
-    Предположим, mapVeto хранится в db.mapVeto:
-    {
-      matchIndex: ...,
-      teams: {...},
-      veto: [...],
-      ...
-    }
-   */
-  db.mapVeto = req.body;
+  db.mapVeto = req.body; // Полное обновление объекта mapVeto
   saveDB();
   io.emit("mapVetoUpdate", db.mapVeto);
   res.json(db.mapVeto);
 });
 
-// API для VRS
+// === API для VRS ===
 app.get("/api/vrs/:id", (req, res) => {
   const matchId = req.params.id;
   if (!db.vrs[matchId]) return res.json([]);
+  // Оборачиваем объект в массив для согласованного формата
   res.json([db.vrs[matchId]]);
 });
 app.post("/api/vrs", (req, res) => {
-  // req.body предполагается вида:
-  // {
-  //   matchId: "1",
-  //   TEAM1: { winPoints, losePoints, rank, currentPoints },
-  //   TEAM2: { ... }
-  // }
   const matchId = req.body.matchId;
-  db.vrs[matchId] = req.body;  // Сохраняем
+  db.vrs[matchId] = req.body;
   saveDB();
   io.emit("vrsUpdate", db.vrs);
   res.json(db.vrs);
 });
 
-// API для custom fields
+// === API для custom fields ===
 app.get("/api/customfields", (req, res) => {
-  // Предположим, db.customFields – объект
   res.json([db.customFields]);
 });
 app.post("/api/customfields", (req, res) => {
-  // Можно хранить как один общий объект
   db.customFields = req.body;
   saveDB();
   io.emit("customFieldsUpdate", db.customFields);
   res.json(db.customFields);
 });
 
-// API для списка команд (из data.json)
+// === API для списка команд (из data.json) ===
 const teamsDataFile = path.join(__dirname, "data.json");
 app.get("/api/teams", (req, res) => {
   fs.readFile(teamsDataFile, "utf8", (err, data) => {
@@ -258,17 +218,15 @@ app.get("/api/teams", (req, res) => {
 /* ====================================
    Socket.io и запуск сервера
 ==================================== */
-const server = http.createServer(app);
-const io = new SocketIOServer(server);
+const serverHttp = http.createServer(app);
+const io = new SocketIOServer(serverHttp);
 
 io.on("connection", (socket) => {
   console.log("Клиент подключён");
-  // Отправляем текущие данные матчей сразу при подключении
   socket.emit("jsonUpdate", db.matches);
-  // Отправляем custom fields, чтобы верхний блок отобразил актуальные значения
   socket.emit("customFieldsUpdate", db.customFields);
 });
 
-server.listen(port, "0.0.0.0", () => {
+serverHttp.listen(port, "0.0.0.0", () => {
   console.log(`Сервер запущен на http://0.0.0.0:${port}`);
 });
