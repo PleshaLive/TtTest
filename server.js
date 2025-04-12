@@ -6,6 +6,38 @@ const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const http = require("http");
 const { Server: SocketIOServer } = require("socket.io");
+const db = require('./db.json');
+
+
+function saveDB() {
+  fs.writeFile('./db.json', JSON.stringify(db, null, 2), err => {
+    if (err) {
+      console.error('Ошибка при сохранении db.json:', err);
+    } else {
+      console.log('db.json успешно обновлен');
+    }
+  });
+}
+
+function handleUpdate(entity, key, newData, res) {
+  console.log(`[POST] /api/${entity} - обновление`, newData);
+  // Обновляем в памяти
+  if (key) {
+    // Если сущности хранятся как объекты
+    db[entity][key] = newData;
+  } else {
+    // Если сущности хранятся как массив, находим по ID и обновляем
+    const index = db[entity].findIndex(item => item.id === newData.id);
+    if (index !== -1) db[entity][index] = newData;
+    else db[entity].push(newData);
+  }
+  // Сохраняем на диск
+  saveDB();
+  // Шлём событие через Socket.io
+  io.emit(`${entity}Updated`, newData);
+  // Отправляем ответ клиенту
+  res.json({ success: true });
+}
 
 // Создаем приложение Express
 const app = express();
@@ -130,6 +162,41 @@ function loadDataFromFile() {
   customFieldsData = jsonData.customFields || {}; // Загружаем custom fields
 }
 loadDataFromFile();
+
+// /api/matchdata - возможно уже хорошо организован
+app.post('/api/matchdata', (req, res) => {
+  console.log('Updating match data');
+  db.matches = req.body;            // обновление памяти
+  fs.writeFileSync('db.json', JSON.stringify(db)); // синхронная запись
+  io.emit('matchData', db.matches); // событие
+  res.sendStatus(200);
+});
+
+// /api/mapveto - пример неунифицированного обработчика
+app.post('/api/mapveto', (req, res) => {
+  db.mapVeto = req.body;            // обновление без логирования
+  fs.writeFileSync('db.json', JSON.stringify(db)); 
+  // нет socket.io события, нет единого формата ответа
+  res.send('ok');
+});
+
+// Использование для разных маршрутов:
+app.post('/api/matchdata', (req, res) => {
+  const matchId = req.body.id;
+  handleUpdate('matches', matchId, req.body, res);
+});
+app.post('/api/mapveto', (req, res) => {
+  const matchId = req.body.matchId;
+  handleUpdate('mapVeto', matchId, req.body, res);
+});
+app.post('/api/vrs', (req, res) => {
+  const matchId = req.body.matchId;
+  handleUpdate('vrs', matchId, req.body, res);
+});
+app.post('/api/customfields', (req, res) => {
+  const matchId = req.body.matchId;
+  handleUpdate('customFields', matchId, req.body, res);
+});
 
 // Функция сохранения данных в db.json
 function saveDataToFile() {

@@ -23,6 +23,75 @@ socket.on("jsonUpdate", (matches) => {
   }
 });
 
+// Универсальная функция для POST-запроса
+async function saveData(entity, data) {
+  try {
+    const response = await fetch(`/api/${entity}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      throw new Error(`Ошибка сохранения ${entity}: ${response.status}`);
+    }
+    const result = await response.json();
+    console.log(`${entity} saved successfully:`, result);
+    // Дополнительные действия при успехе (например, отображение уведомления)
+  } catch (err) {
+    console.error('Save error:', err);
+    // Единая обработка ошибок (например, показать сообщение пользователю)
+  }
+}
+
+// Функции применения изменений для каждой сущности
+function applyMatchChanges() {
+  // Сбор данных матча из формы/UI
+  const matchData = {
+    id: document.querySelector('#matchId').value,
+    teamA: document.querySelector('#teamA').value,
+    teamB: document.querySelector('#teamB').value,
+    score: {
+      teamA: parseInt(document.querySelector('#scoreA').value, 10),
+      teamB: parseInt(document.querySelector('#scoreB').value, 10)
+    }
+    // ... другие поля ...
+  };
+  // Отправляем на сервер единообразно
+  saveData('matchdata', matchData);
+}
+
+function applyMapVetoChanges() {
+  // Сбор данных map veto из UI
+  const vetoData = {
+    matchId: document.querySelector('#matchId').value,
+    maps: collectSelectedMaps(),       // предположим, функция собирает выбранные карты
+    bans: collectBannedMaps()          // собирает забаненные карты
+    // ... другие поля ...
+  };
+  saveData('mapveto', vetoData);
+}
+
+function applyVRSChanges() {
+  const vrsData = {
+    matchId: document.querySelector('#matchId').value,
+    rankingPoints: parseInt(document.querySelector('#vrsPoints').value, 10),
+    region: document.querySelector('#vrsRegion').value
+    // ... другие поля ...
+  };
+  saveData('vrs', vrsData);
+}
+
+function applyCustomFieldsChanges() {
+  const customData = {
+    matchId: document.querySelector('#matchId').value,
+    field1: document.querySelector('#field1').value,
+    field2: document.querySelector('#field2').value
+    // ... другие поля ...
+  };
+  saveData('customfields', customData);
+}
+
+
 // Обновление Map Veto
 socket.on("mapVetoUpdate", (updatedMapVeto) => {
   console.log("Получены обновления Map Veto:", updatedMapVeto);
